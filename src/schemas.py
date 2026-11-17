@@ -98,3 +98,29 @@ class Rappels(pa.DataFrameModel):
         unique = ["id", "gtin"]
 
 
+
+class PrixRnm(pa.DataFrameModel):
+    """Prix RNM - FranceAgriMer : une ligne par produit, marché, date, stade et libellé."""
+
+    produit_code: pl.String = pa.Field(str_matches=r"^[A-Z-]+$")
+    mot_cle_instacart: pl.String = pa.Field(str_length={"min_value": 2})
+    marche: pl.String = pa.Field(str_length={"min_value": 1})
+    date_cotation: pl.Date = pa.Field(nullable=True)
+    stade: pl.String = pa.Field(nullable=True)
+    unite: pl.String = pa.Field(nullable=True)
+    commentaire_marche: pl.String = pa.Field(nullable=True)
+    libelle: pl.String = pa.Field(str_length={"min_value": 1})
+    prix_moyen: pl.Float64 = pa.Field(ge=0)
+    variation: pl.Float64 = pa.Field(nullable=True)
+    mini: pl.Float64 = pa.Field(ge=0, nullable=True)
+    maxi: pl.Float64 = pa.Field(ge=0, nullable=True)
+    url: pl.String
+    ingested_at: pl.Datetime
+
+    class Config:
+        strict = True
+        coerce = False
+        unique = ["produit_code", "marche", "date_cotation", "stade", "libelle"]
+        
+
+
