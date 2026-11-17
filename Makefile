@@ -1,5 +1,5 @@
 # Commandes du projet Panier Vert (à lancer depuis la racine du dépôt)
-.PHONY: install prepare test rappelconso rnm
+.PHONY: install prepare test rappelconso rnm off
 
 # Installe l'environnement Python à l'identique (Python 3.12, Polars, Pandera...)
 install: ; uv sync
@@ -16,3 +16,7 @@ rappelconso: ; uv run python -m src.collect_rappelconso && uv run python -m src.
 
 # Scraping des prix RNM - FranceAgriMer puis transformation -> data/processed/rnm_prix.parquet
 rnm: ; uv run python -m src.collect_rnm && uv run python -m src.transform_rnm
+
+
+# Open Food Facts : fiche produit des codes-barres rappelés (incrémental), puis transformation
+off: ; uv run python -m src.collect_off && uv run python -m src.transform_off
