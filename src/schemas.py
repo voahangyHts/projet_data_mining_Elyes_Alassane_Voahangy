@@ -75,3 +75,26 @@ class OrdersClean(Orders):
     """Table orders après nettoyage : ajoute l'indicateur de première commande."""
 
     is_first_order: pl.Boolean
+
+class Rappels(pa.DataFrameModel):
+    """Rappels RappelConso (alimentation) : une ligne par couple (rappel, produit)."""
+
+    id: pl.Int64 = pa.Field(ge=1)
+    numero_version: pl.Int16 = pa.Field(ge=1, nullable=True)
+    gtin: pl.String = pa.Field(str_matches=r"^\d{8,14}$", nullable=True)
+    sous_categorie_produit: pl.String = pa.Field(nullable=True)
+    marque_produit: pl.String = pa.Field(nullable=True)
+    libelle: pl.String = pa.Field(nullable=True)
+    motif_rappel: pl.String = pa.Field(nullable=True)
+    risques_encourus: pl.String = pa.Field(nullable=True)
+    date_publication: pl.Datetime
+    date_fin_procedure: pl.Date = pa.Field(nullable=True)
+    lien_fiche: pl.String = pa.Field(nullable=True)
+    ingested_at: pl.Datetime
+
+    class Config:
+        strict = True
+        coerce = False
+        unique = ["id", "gtin"]
+
+
