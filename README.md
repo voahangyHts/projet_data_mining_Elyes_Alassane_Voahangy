@@ -11,6 +11,7 @@ Création d'une chaîne de valeur data de bout en bout pour l'enseigne **Panier 
 ## 📦 Livrables J1 (Cadrage & Collecte)
 - [📝 Note de Cadrage complète (Google Docs)](https://docs.google.com/document/d/1zu0tuSSn_PA3QzpIr4u32soNZXNI1GxXzssuX4ym5qs/edit?usp=sharing)
 - [🏗️ Schéma d'Architecture Globale (PDF)](Architecture_Panier_Vert.pdf)
+- [🔄 Flux de données Panier Vert (PDF)](Flux_de_donnees_Panier_Vert.pdf)
 
 ## 📊 Sources de Données
 1. **Instacart** : Historique de 3 millions de commandes (CSV stockés dans `data/raw/`)
