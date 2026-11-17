@@ -30,6 +30,24 @@ Création d'une chaîne de valeur data de bout en bout pour l'enseigne **Panier 
 - `notebooks/` : Notebooks d'analyse (EDA, modélisation)
 - `src/` : Scripts Python (collecte, api, scraping)
 
+## 🧹 Préparation des données (J2 – ticket PAN-5)
+
+Le pipeline lit les CSV bruts d'Instacart, les type, les nettoie, vérifie l'intégrité entre les tables et un **contrat de données Pandera**, puis écrit les tables propres en Parquet dans `data/processed/`.
+
+```bash
+make install   # première fois : installe l'environnement (Python 3.12, Polars, Pandera)
+make prepare   # nettoyage + contrat de données
+make test      # tests automatiques
+```
+
+- **Code :** `src/prepare.py` (nettoyage Polars) et `src/schemas.py` (contrat Pandera)
+- **Entrée :** `data/raw/instacart/*.csv` (6 fichiers, 681 Mo)
+- **Sortie :** `data/processed/*.parquet` (6 tables, 127 Mo), en ~12 s
+- **Contrat :** types stricts, bornes (jour 0-6, heure 0-23, délai 0-30…), unicité des clés, aucune colonne inattendue ; toute violation arrête le pipeline
+- **Manquants :** `days_since_prior_order` est vide uniquement pour la 1re commande de chaque client ; l'information est conservée dans la colonne `is_first_order`
+
+> **PC Windows ARM** : si Polars affiche `unknown feature flag: 'sse3'`, exécuter une fois `setx POLARS_SKIP_CPU_CHECK 1` puis redémarrer le terminal / VS Code.
+
 ## 🚀 Démarrage rapide (Collecte)
 Conformément aux exigences de reproductibilité, la collecte s'exécute avec la commande suivante :
 ```bash
