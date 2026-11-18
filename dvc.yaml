@@ -104,3 +104,11 @@ stages:
           cache: false
       - reports/shap_reachat.png:
           cache: false
+
+  # --- Quality gate : dvc repro échoue si le modèle est moins bon ----------
+  quality_gate:
+    cmd: uv run python -m src.quality_gate
+    deps:
+      - src/quality_gate.py
+      - reports/classification_resultats.csv
+      - reports/champion.json

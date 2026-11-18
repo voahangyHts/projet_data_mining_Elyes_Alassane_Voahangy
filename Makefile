@@ -1,5 +1,5 @@
 # Commandes du projet Panier Vert (à lancer depuis la racine du dépôt)
-.PHONY: install prepare test rappelconso rnm off lake data-version repro push pull
+.PHONY: install prepare test gate champion rappelconso rnm off lake data-version repro push pull
 
 # Installe l'environnement Python à l'identique (Python 3.12, Polars, Pandera...)
 install: ; uv sync
@@ -9,6 +9,12 @@ prepare: ; uv run python -m src.prepare
 
 # Lance les tests automatiques (contrat de données et nettoyage)
 test: ; uv run python -m pytest -v
+
+# Quality gate : refuse un modèle moins bon que le champion (reports/champion.json)
+gate: ; uv run python -m src.quality_gate
+
+# Si le nouveau modèle est meilleur, il devient le champion (puis commiter champion.json)
+champion: ; uv run python -m src.quality_gate --promouvoir
 
 # Collecte RappelConso (incrémentale) puis transformation -> data/processed/rappels.parquet
 rappelconso: ; uv run python -m src.collect_rappelconso && uv run python -m src.transform_rappelconso

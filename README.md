@@ -127,3 +127,17 @@ make pull           # récupère les données correspondant au commit courant
 > Pour revenir à une ancienne version des données : `git checkout <commit>` puis `dvc checkout`.
 >
 > Le data lake RustFS tourne sur chaque PC (`localhost`) : un `dvc pull` ne marche que sur le PC qui a fait le `dvc push`. Pour partager les versions entre les membres de l'équipe, il faudrait un remote commun (serveur S3 partagé ou dossier synchronisé).
+
+## ✅ Intégration continue et quality gate (GitHub Actions)
+
+À chaque push et pull request, GitHub lance seul le workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) :
+
+1. **Tests automatiques** : contrats de données, nettoyage et quality gate (`make test`).
+2. **Quality gate** : le meilleur modèle de `reports/classification_resultats.csv` est comparé au **champion** enregistré dans `reports/champion.json`, sur la **PR-AUC** (métrique adaptée aux classes déséquilibrées : environ 10 % de réachats). Un modèle moins bon que le champion, au-delà d'une tolérance de 0,005, est **refusé** : le commit passe en rouge et la pull request ne doit pas être fusionnée.
+
+```bash
+make gate       # vérifier en local avant de pousser
+make champion   # le nouveau modèle est meilleur : il devient le champion
+```
+
+Le quality gate est aussi la dernière étape du pipeline DVC : `dvc repro` échoue si le modèle régresse. GitHub n'entraîne pas les modèles (les données restent sur le data lake local) : il vérifie les résultats produits par `dvc repro` et versionnés dans `reports/`.
