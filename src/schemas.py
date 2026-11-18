@@ -122,5 +122,25 @@ class PrixRnm(pa.DataFrameModel):
         coerce = False
         unique = ["produit_code", "marche", "date_cotation", "stade", "libelle"]
         
+class OffProduits(pa.DataFrameModel):
+    """Fiche Open Food Facts d'un code-barres rappelé."""
 
+    code: pl.String = pa.Field(str_matches=r"^\d{8,14}$", unique=True)
+    nom: pl.String = pa.Field(nullable=True)
+    marques: pl.String = pa.Field(nullable=True)
+    categories: pl.String = pa.Field(nullable=True)
+    nutriscore: pl.String = pa.Field(
+        isin=["a", "b", "c", "d", "e"], nullable=True
+    )
+    ecoscore: pl.String = pa.Field(
+        isin=["a-plus", "a", "b", "c", "d", "e", "f"], nullable=True
+    )
+    nova: pl.Int64 = pa.Field(ge=1, le=4, nullable=True)
+    allergenes: pl.String = pa.Field(nullable=True)
+    vendu_en_france: pl.Boolean
+    ingested_at: pl.Datetime
+
+    class Config:
+        strict = True
+        coerce = False
 
