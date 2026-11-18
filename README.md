@@ -25,7 +25,7 @@ Création d'une chaîne de valeur data de bout en bout pour l'enseigne **Panier 
 | Instacart (Kaggle) | 3,4 M de commandes, 49 688 produits, historique de 32,4 M de lignes | Fichiers CSV téléchargés | `make prepare` | 6 tables Parquet (127 Mo) | Usage non commercial (conditions Instacart / Kaggle) |
 | RappelConso V2 | Rappels de produits en France (`rappelconso-v2-gtin-trie`) | API open data, export JSON incrémental | `make rappelconso` | 19 020 rappels bruts, 14 548 rappels alimentaires propres | Licence Ouverte Etalab 2.0 |
 | RNM FranceAgriMer | Prix de gros de 18 fruits et légumes | Scraping HTML (pause de 2 s entre les pages) | `make rnm` | 1 209 prix | Données publiques, source citée (voir mentions légales du RNM) |
-| Open Food Facts | Nutri-Score, Eco-Score, NOVA, allergènes des produits rappelés | API produit par code-barres | `make off` | ≈ 10 200 codes interrogés, 65 % trouvés (provisoire) | ODbL |
+| Open Food Facts | Nutri-Score, Eco-Score, NOVA, allergènes des produits rappelés | API produit par code-barres | `make off` | 10 217 codes interrogés, 6 278 produits trouvés (61,4 %) | ODbL |
 
 Chaque source suit le même circuit : **collecte** → `data/raw/<source>/` (brut fidèle, tout en texte, date d'ingestion en UTC) → **transformation** (typage, nettoyage, dédoublonnage) → **contrat Pandera** → `data/processed/`. Si le contrat échoue, le pipeline s'arrête. Aucune valeur n'est inventée : une donnée absente reste vide.
 
