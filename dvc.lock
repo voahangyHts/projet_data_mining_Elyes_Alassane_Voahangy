@@ -1,0 +1,233 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: uv run python -m src.prepare
+    deps:
+    - path: data/raw/instacart
+      hash: md5
+      md5: d77454baf88d147d71467d57d34b898c.dir
+      size: 713369324
+      nfiles: 6
+    - path: src/prepare.py
+      hash: md5
+      md5: 35aeff88648a8bfdfa808ba9f542bd0f
+      size: 5739
+    - path: src/schemas.py
+      hash: md5
+      md5: 9880c8aba3a8609c98a7d2ed9708faa9
+      size: 5031
+    outs:
+    - path: data/processed/aisles.parquet
+      hash: md5
+      md5: 841c88223e672623a67ac45c341e4d96
+      size: 2533
+    - path: data/processed/departments.parquet
+      hash: md5
+      md5: e94967bf816008c8de31ca82d94218c3
+      size: 1143
+    - path: data/processed/order_products__prior.parquet
+      hash: md5
+      md5: ba83bf561466efc7b02ef588639a5c49
+      size: 106989352
+    - path: data/processed/order_products__train.parquet
+      hash: md5
+      md5: 9922a950f0eb5fd7a98ac20c49ba4581
+      size: 4583767
+    - path: data/processed/orders.parquet
+      hash: md5
+      md5: b33584645eff2b055872278f814dfb20
+      size: 20384938
+    - path: data/processed/products.parquet
+      hash: md5
+      md5: 09c88e0bbe140aa4f35a2baea6cd9981
+      size: 796166
+  transform_rappelconso:
+    cmd: uv run python -m src.transform_rappelconso
+    deps:
+    - path: data/raw/rappelconso
+      hash: md5
+      md5: 068694b4cc8b02aefe9e47581a6bf26a.dir
+      size: 2925905
+      nfiles: 1
+    - path: src/schemas.py
+      hash: md5
+      md5: 9880c8aba3a8609c98a7d2ed9708faa9
+      size: 5031
+    - path: src/transform_rappelconso.py
+      hash: md5
+      md5: 2bef4bd8a5ea5e9afba7ae58891b187d
+      size: 3028
+    outs:
+    - path: data/processed/rappels.parquet
+      hash: md5
+      md5: d3d07efbb0dc52e9c5d2382e8ce1c9c1
+      size: 561947
+  transform_rnm:
+    cmd: uv run python -m src.transform_rnm
+    deps:
+    - path: data/raw/rnm
+      hash: md5
+      md5: 1d0a21f5cc0560d40ec47d929eee47b6.dir
+      size: 80985
+      nfiles: 3
+    - path: src/schemas.py
+      hash: md5
+      md5: 9880c8aba3a8609c98a7d2ed9708faa9
+      size: 5031
+    - path: src/transform_rnm.py
+      hash: md5
+      md5: 8ff96572b6476b0ea4248100e7e08884
+      size: 3352
+    outs:
+    - path: data/processed/rnm_prix.parquet
+      hash: md5
+      md5: 9c9d43a39db3cc6c539da8dcc870899a
+      size: 29935
+  transform_off:
+    cmd: uv run python -m src.transform_off
+    deps:
+    - path: data/raw/off
+      hash: md5
+      md5: e66398f83d8d8031a34d1cb81dca5952.dir
+      size: 986348
+      nfiles: 205
+    - path: src/schemas.py
+      hash: md5
+      md5: 9880c8aba3a8609c98a7d2ed9708faa9
+      size: 5031
+    - path: src/transform_off.py
+      hash: md5
+      md5: a8599744feb2941865132e4722cf5504
+      size: 3826
+    outs:
+    - path: data/processed/off_produits.parquet
+      hash: md5
+      md5: 45fd51bd072217015af610364a090235
+      size: 230615
+  clustering:
+    cmd: uv run python -m src.clustering
+    deps:
+    - path: data/processed/departments.parquet
+      hash: md5
+      md5: e94967bf816008c8de31ca82d94218c3
+      size: 1143
+    - path: data/processed/order_products__prior.parquet
+      hash: md5
+      md5: ba83bf561466efc7b02ef588639a5c49
+      size: 106989352
+    - path: data/processed/orders.parquet
+      hash: md5
+      md5: b33584645eff2b055872278f814dfb20
+      size: 20384938
+    - path: data/processed/products.parquet
+      hash: md5
+      md5: 09c88e0bbe140aa4f35a2baea6cd9981
+      size: 796166
+    - path: src/clustering.py
+      hash: md5
+      md5: 9b8e3542440da65cc9f4bdd8a5088b9d
+      size: 5271
+    outs:
+    - path: data/processed/segments_clients.parquet
+      hash: md5
+      md5: a7a0209566bc271612ffee39d775efa5
+      size: 627465
+    - path: reports/choix_k.png
+      hash: md5
+      md5: 0e74da0411b6e8eb3b2e6987971fffcf
+      size: 45115
+    - path: reports/segments_acp.png
+      hash: md5
+      md5: 40291bc0ba7ff80f41ef7563e0d424d1
+      size: 248642
+    - path: reports/segments_profils.csv
+      hash: md5
+      md5: 13711a3132b0b38c06648a4681e765dc
+      size: 235
+  rules:
+    cmd: uv run python -m src.rules
+    deps:
+    - path: data/processed/aisles.parquet
+      hash: md5
+      md5: 841c88223e672623a67ac45c341e4d96
+      size: 2533
+    - path: data/processed/order_products__prior.parquet
+      hash: md5
+      md5: ba83bf561466efc7b02ef588639a5c49
+      size: 106989352
+    - path: data/processed/orders.parquet
+      hash: md5
+      md5: b33584645eff2b055872278f814dfb20
+      size: 20384938
+    - path: data/processed/products.parquet
+      hash: md5
+      md5: 09c88e0bbe140aa4f35a2baea6cd9981
+      size: 796166
+    - path: src/rules.py
+      hash: md5
+      md5: e79ce2bf757b335d7416daa7141b10e7
+      size: 5913
+    outs:
+    - path: reports/regles_produits.csv
+      hash: md5
+      md5: 5c07bc8235d0e125e6cd3a3b968c09a6
+      size: 295
+    - path: reports/regles_rayons.csv
+      hash: md5
+      md5: 174ea5989fdd211a2374c1953d0e752a
+      size: 418
+  classification:
+    cmd: uv run python -m src.classification
+    deps:
+    - path: data/processed/departments.parquet
+      hash: md5
+      md5: e94967bf816008c8de31ca82d94218c3
+      size: 1143
+    - path: data/processed/order_products__prior.parquet
+      hash: md5
+      md5: ba83bf561466efc7b02ef588639a5c49
+      size: 106989352
+    - path: data/processed/order_products__train.parquet
+      hash: md5
+      md5: 9922a950f0eb5fd7a98ac20c49ba4581
+      size: 4583767
+    - path: data/processed/orders.parquet
+      hash: md5
+      md5: b33584645eff2b055872278f814dfb20
+      size: 20384938
+    - path: data/processed/products.parquet
+      hash: md5
+      md5: 09c88e0bbe140aa4f35a2baea6cd9981
+      size: 796166
+    - path: data/processed/segments_clients.parquet
+      hash: md5
+      md5: a7a0209566bc271612ffee39d775efa5
+      size: 627465
+    - path: src/classification.py
+      hash: md5
+      md5: b9f14df62ff4d42873cfc0a7c88a5ffb
+      size: 9238
+    outs:
+    - path: reports/classification_resultats.csv
+      hash: md5
+      md5: f39c792cc394ccac7dc27d01860e4c59
+      size: 159
+    - path: reports/shap_reachat.png
+      hash: md5
+      md5: dfc44aec3e887949651f084f56f5ff1f
+      size: 112679
+  quality_gate:
+    cmd: uv run python -m src.quality_gate
+    deps:
+    - path: reports/champion.json
+      hash: md5
+      md5: 548f9bcdaed72b74e7fe32f196b64a65
+      size: 160
+    - path: reports/classification_resultats.csv
+      hash: md5
+      md5: f39c792cc394ccac7dc27d01860e4c59
+      size: 159
+    - path: src/quality_gate.py
+      hash: md5
+      md5: ba94be310bc8f0398f931b4ee8c29d13
+      size: 3287
