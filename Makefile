@@ -1,5 +1,5 @@
 # Commandes du projet Panier Vert (à lancer depuis la racine du dépôt)
-.PHONY: install prepare test rappelconso rnm off
+.PHONY: install prepare test rappelconso rnm off lake
 
 # Installe l'environnement Python à l'identique (Python 3.12, Polars, Pandera...)
 install: ; uv sync
@@ -20,3 +20,7 @@ rnm: ; uv run python -m src.collect_rnm && uv run python -m src.transform_rnm
 
 # Open Food Facts : fiche produit des codes-barres rappelés (incrémental), puis transformation
 off: ; uv run python -m src.collect_off && uv run python -m src.transform_off
+
+
+# Data lake : envoie data/raw et data/processed vers RustFS (lancer d'abord docker compose up -d)
+lake: ; uv run python -m src.upload_lake
