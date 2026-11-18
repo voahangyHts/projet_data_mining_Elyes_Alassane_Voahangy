@@ -42,7 +42,7 @@ Chaque source suit le même circuit : **collecte** → `data/raw/<source>/` (bru
 - **Open Food Facts** :
   - la recherche de l'API est souvent indisponible (erreur 503) : on interroge produit par produit (≈ 15 codes par minute) ;
   - les 1 783 codes commençant par 2 sont exclus : ce sont des codes internes aux magasins (norme GS1), inconnus d'Open Food Facts ;
-  - les fiches sont souvent incomplètes : 26 % sans Nutri-Score, 38 % sans groupe NOVA.
+  - les fiches sont souvent incomplètes : 32 % sans Nutri-Score, 43 % sans groupe NOVA.
 
 ## 📁 Organisation du dépôt
 - `data/raw/` : Données brutes au format Parquet et CSV (ne jamais modifier manuellement)
