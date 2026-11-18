@@ -24,7 +24,7 @@ CHAMPS = ",".join([
 ])
 USER_AGENT = "PanierVert-MSPR/1.0 (projet etudiant)"
 PAUSE = 0.2   # la réponse prend déjà ~1,2 s : on reste vers 40 requêtes/min
-LOT = 200     # un fichier écrit tous les 200 codes
+LOT = 50      # un fichier tous les 50 codes : progression visible, peu de perte si arrêt
 MAX_ECHECS = 10
 RAPPELS = Path("data/processed/rappels.parquet")
 DOSSIER = Path("data/raw/off")
@@ -52,22 +52,34 @@ def creer_session():
 
 
 def codes_a_interroger():
-    """Codes-barres des rappels, moins ceux déjà présents dans data/raw/off."""
+    """Codes-barres des rappels à interroger, codes français en premier.
+
+    - Codes commençant par 2 : codes internes aux magasins (norme GS1,
+      produits pesés ou à la coupe). Open Food Facts ne peut pas les
+      connaître : on ne les interroge pas.
+    - Codes déjà présents dans data/raw/off : déjà faits (incrémental).
+    """
     codes = (
         pl.read_parquet(RAPPELS)["gtin"]
         .drop_nulls()
         .unique()
-        .sort()
         .to_list()
     )
+    magasin = [c for c in codes if c.startswith("2")]
+    codes = [c for c in codes if not c.startswith("2")]
+
     deja = set()
     fichiers = list(DOSSIER.glob("produits_*.parquet"))
     if fichiers:
         deja = set(pl.read_parquet(fichiers)["code"].to_list())
     restants = [c for c in codes if c not in deja]
+
+    # Les codes français (préfixe 3) d'abord, puis les autres
+    restants.sort(key=lambda c: (not c.startswith("3"), c))
+
     log.info(
-        "%d codes dans les rappels, %d déjà interrogés, %d restants",
-        len(codes), len(deja), len(restants),
+        "%d codes magasin exclus, %d déjà interrogés, %d restants",
+        len(magasin), len(deja), len(restants),
     )
     return restants
 
@@ -75,7 +87,7 @@ def codes_a_interroger():
 def interroger(session, code):
     """Demande la fiche d'un code. 404 = produit inconnu (ce n'est pas une erreur)."""
     reponse = session.get(
-        URL.format(code=code), params={"fields": CHAMPS}, timeout=30
+        URL.format(code=code), params={"fields": CHAMPS}, timeout=15
     )
     if reponse.status_code not in (200, 404):
         reponse.raise_for_status()
