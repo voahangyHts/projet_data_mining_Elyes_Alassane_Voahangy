@@ -125,25 +125,25 @@ stages:
       size: 796166
     - path: src/clustering.py
       hash: md5
-      md5: 9b8e3542440da65cc9f4bdd8a5088b9d
-      size: 5271
+      md5: 1871ff514c9687ab7e035776c404d262
+      size: 6039
     outs:
     - path: data/processed/segments_clients.parquet
       hash: md5
-      md5: a7a0209566bc271612ffee39d775efa5
-      size: 627465
+      md5: c5b731c23b44b762b7687df5c7004919
+      size: 584397
     - path: reports/choix_k.png
       hash: md5
-      md5: 0e74da0411b6e8eb3b2e6987971fffcf
-      size: 45115
+      md5: 102684156debce8b755ebd90d76b6985
+      size: 44893
     - path: reports/segments_acp.png
       hash: md5
-      md5: 40291bc0ba7ff80f41ef7563e0d424d1
-      size: 248642
+      md5: aec7462068d48bf6096f2944ccbd1672
+      size: 249080
     - path: reports/segments_profils.csv
       hash: md5
-      md5: 13711a3132b0b38c06648a4681e765dc
-      size: 235
+      md5: 3e0182824c207e46aef5d753279f14be
+      size: 238
   rules:
     cmd: uv run python -m src.rules
     deps:
@@ -201,8 +201,8 @@ stages:
       size: 796166
     - path: data/processed/segments_clients.parquet
       hash: md5
-      md5: a7a0209566bc271612ffee39d775efa5
-      size: 627465
+      md5: c5b731c23b44b762b7687df5c7004919
+      size: 584397
     - path: src/classification.py
       hash: md5
       md5: b9f14df62ff4d42873cfc0a7c88a5ffb
@@ -210,12 +210,12 @@ stages:
     outs:
     - path: reports/classification_resultats.csv
       hash: md5
-      md5: f39c792cc394ccac7dc27d01860e4c59
+      md5: c60d79486f33c21e335fd2cf85393bb1
       size: 159
     - path: reports/shap_reachat.png
       hash: md5
-      md5: dfc44aec3e887949651f084f56f5ff1f
-      size: 112679
+      md5: 6cc53a78dd7c0c1efc01927338b195ae
+      size: 115861
   quality_gate:
     cmd: uv run python -m src.quality_gate
     deps:
@@ -225,7 +225,7 @@ stages:
       size: 160
     - path: reports/classification_resultats.csv
       hash: md5
-      md5: f39c792cc394ccac7dc27d01860e4c59
+      md5: c60d79486f33c21e335fd2cf85393bb1
       size: 159
     - path: src/quality_gate.py
       hash: md5
