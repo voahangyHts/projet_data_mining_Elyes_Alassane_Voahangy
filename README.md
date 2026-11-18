@@ -18,7 +18,7 @@ Création d'une chaîne de valeur data de bout en bout pour l'enseigne **Panier 
 - Données nettoyées et validées par schéma (Pandera) dans `data/processed/`
 - Algorithmes entraînés : Segmentation (K-means), Recommandation (FP-Growth), Prédiction de réachat (XGBoost).
 
-## Sources de données
+## 📊 Sources de données
 
 | Source | Contenu | Accès | Commande | Volume obtenu | Licence |
 |---|---|---|---|---|---|
