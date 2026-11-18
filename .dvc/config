@@ -1,0 +1,7 @@
+[core]
+    remote = lake
+    autostage = true
+['remote "lake"']
+    url = s3://dvc
+    endpointurl = http://localhost:9000
+    region = us-east-1

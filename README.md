@@ -97,3 +97,33 @@ docker compose down     # arrête le data lake (les données sont conservées)
 - **Incrémental :** un fichier déjà présent avec la même taille n'est pas renvoyé.
 - **Services optionnels :** `docker compose --profile restitution up -d` (PostgreSQL + Adminer) et `docker compose --profile mlops up -d` (MLflow, prévu pour le J3).
 - **Sécurité :** `.env` contient les mots de passe et n'est jamais envoyé sur GitHub (il est dans `.gitignore`) ; seul le modèle `.env.example` est versionné.
+
+## 🗂️ Versionnage des données (DVC)
+
+Git versionne le code, **DVC versionne les données**. Les fichiers lourds restent hors de Git : Git ne garde que de petits fichiers d'empreintes (`data/raw.dvc`, `dvc.lock`), et le contenu est stocké dans le compartiment `dvc` du data lake RustFS (remote DVC `lake`). Chaque commit Git correspond ainsi à une version exacte des données et des résultats.
+
+- **Données brutes** (`data/raw/`) : versionnées par `data/raw.dvc`. Elles ne se recalculent pas (copie Kaggle, collectes API), donc on les fige après chaque collecte.
+- **Pipeline** (`dvc.yaml`) : `prepare` et `transform_*` (brut → propre), puis `clustering`, `rules` et `classification`. `dvc repro` ne relance que les étapes dont le code ou les entrées ont changé, et `dvc.lock` enregistre les empreintes de chaque entrée et sortie.
+- **Résultats** (`reports/`) : produits par le pipeline mais laissés dans Git, pour rester lisibles sur GitHub.
+
+**Première installation (une fois par PC) :**
+```bash
+uv tool install "dvc[s3]"      # DVC est installé à part (conflit de versions avec boto3)
+docker compose up -d            # le data lake crée aussi le compartiment dvc
+dvc remote modify --local lake access_key_id <S3_ACCESS_KEY du .env>
+dvc remote modify --local lake secret_access_key <S3_SECRET_KEY du .env>
+```
+Les identifiants vont dans `.dvc/config.local`, qui n'est jamais envoyé sur GitHub.
+
+**Au quotidien :**
+```bash
+make data-version   # après une collecte : nouvelle version de data/raw (dvc add)
+make repro          # rejoue les étapes du pipeline qui ont changé
+make push           # envoie les données versionnées sur le data lake
+git add data/raw.dvc dvc.lock reports && git commit -m "..."
+make pull           # récupère les données correspondant au commit courant
+```
+
+> Pour revenir à une ancienne version des données : `git checkout <commit>` puis `dvc checkout`.
+>
+> Le data lake RustFS tourne sur chaque PC (`localhost`) : un `dvc pull` ne marche que sur le PC qui a fait le `dvc push`. Pour partager les versions entre les membres de l'équipe, il faudrait un remote commun (serveur S3 partagé ou dossier synchronisé).

@@ -1,0 +1,106 @@
+# ============================================================================
+#  Pipeline DVC du projet Panier Vert
+# ============================================================================
+#  Rejouer tout ce qui a changé : dvc repro      (ou : make repro)
+#  Voir le graphe des étapes     : dvc dag
+#
+#  Les données brutes (data/raw) ne sont PAS produites ici : elles viennent de
+#  Kaggle (Instacart, copie manuelle) et des collectes API incrémentales
+#  (make rappelconso / rnm / off). Elles sont versionnées par data/raw.dvc :
+#  après une collecte, lancer « make data-version » (dvc add data/raw).
+#
+#  Les sorties dans reports/ restent suivies par Git (cache: false), pour que
+#  les résultats soient lisibles directement sur GitHub.
+# ============================================================================
+
+stages:
+
+  # --- Préparation des données (brut -> propre, contrats Pandera) ----------
+  prepare:
+    cmd: uv run python -m src.prepare
+    deps:
+      - src/prepare.py
+      - src/schemas.py
+      - data/raw/instacart
+    outs:
+      - data/processed/orders.parquet
+      - data/processed/order_products__prior.parquet
+      - data/processed/order_products__train.parquet
+      - data/processed/products.parquet
+      - data/processed/aisles.parquet
+      - data/processed/departments.parquet
+
+  transform_rappelconso:
+    cmd: uv run python -m src.transform_rappelconso
+    deps:
+      - src/transform_rappelconso.py
+      - src/schemas.py
+      - data/raw/rappelconso
+    outs:
+      - data/processed/rappels.parquet
+
+  transform_rnm:
+    cmd: uv run python -m src.transform_rnm
+    deps:
+      - src/transform_rnm.py
+      - src/schemas.py
+      - data/raw/rnm
+    outs:
+      - data/processed/rnm_prix.parquet
+
+  transform_off:
+    cmd: uv run python -m src.transform_off
+    deps:
+      - src/transform_off.py
+      - src/schemas.py
+      - data/raw/off
+    outs:
+      - data/processed/off_produits.parquet
+
+  # --- Modèles ---------------------------------------------------------------
+  clustering:
+    cmd: uv run python -m src.clustering
+    deps:
+      - src/clustering.py
+      - data/processed/orders.parquet
+      - data/processed/order_products__prior.parquet
+      - data/processed/products.parquet
+      - data/processed/departments.parquet
+    outs:
+      - data/processed/segments_clients.parquet
+      - reports/segments_profils.csv:
+          cache: false
+      - reports/choix_k.png:
+          cache: false
+      - reports/segments_acp.png:
+          cache: false
+
+  rules:
+    cmd: uv run python -m src.rules
+    deps:
+      - src/rules.py
+      - data/processed/orders.parquet
+      - data/processed/order_products__prior.parquet
+      - data/processed/products.parquet
+      - data/processed/aisles.parquet
+    outs:
+      - reports/regles_rayons.csv:
+          cache: false
+      - reports/regles_produits.csv:
+          cache: false
+
+  classification:
+    cmd: uv run python -m src.classification
+    deps:
+      - src/classification.py
+      - data/processed/orders.parquet
+      - data/processed/order_products__prior.parquet
+      - data/processed/order_products__train.parquet
+      - data/processed/products.parquet
+      - data/processed/departments.parquet
+      - data/processed/segments_clients.parquet
+    outs:
+      - reports/classification_resultats.csv:
+          cache: false
+      - reports/shap_reachat.png:
+          cache: false

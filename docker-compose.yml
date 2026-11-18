@@ -41,9 +41,10 @@ services:
       rustfs-init:
         condition: service_completed_successfully
 
-  # Crée les 2 zones du data lake au démarrage, puis s'arrête :
+  # Crée les compartiments du data lake au démarrage, puis s'arrête :
   #   raw       = données brutes (instacart, rappelconso, rnm, off)
   #   processed = données propres validées par les contrats Pandera
+  #   dvc       = stockage des versions de données (remote DVC « lake »)
   lake-buckets:
     image: amazon/aws-cli:latest
     depends_on:
@@ -54,10 +55,10 @@ services:
       AWS_DEFAULT_REGION: us-east-1
     entrypoint: >
       sh -c "sleep 5 &&
-             for b in raw processed; do
+             for b in raw processed dvc; do
                aws --endpoint-url http://rustfs:9000 s3 mb s3://$$b || true;
              done &&
-             echo buckets raw et processed prets"
+             echo buckets raw, processed et dvc prets"
 
   # --- Base de restitution (profil « restitution ») -------------------------
   # Tables finales pour le tableau de bord (segments, recommandations, alertes)

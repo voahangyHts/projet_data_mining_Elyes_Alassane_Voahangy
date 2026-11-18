@@ -1,5 +1,5 @@
 # Commandes du projet Panier Vert (à lancer depuis la racine du dépôt)
-.PHONY: install prepare test rappelconso rnm off lake
+.PHONY: install prepare test rappelconso rnm off lake data-version repro push pull
 
 # Installe l'environnement Python à l'identique (Python 3.12, Polars, Pandera...)
 install: ; uv sync
@@ -24,3 +24,15 @@ off: ; uv run python -m src.collect_off && uv run python -m src.transform_off
 
 # Data lake : envoie data/raw et data/processed vers RustFS (lancer d'abord docker compose up -d)
 lake: ; uv run python -m src.upload_lake
+
+
+# --- Versionnage des données avec DVC (outil installé à part : uv tool install "dvc[s3]") ---
+# Nouvelle version des données brutes (après une collecte) -> met à jour data/raw.dvc
+data-version: ; dvc add data/raw
+
+# Rejoue uniquement les étapes du pipeline dont les entrées ont changé (dvc.yaml)
+repro: ; dvc repro
+
+# Envoie / récupère les versions de données sur le remote RustFS (bucket « dvc »)
+push: ; dvc push
+pull: ; dvc pull
