@@ -1,5 +1,5 @@
 [core]
-    remote = lake
+    remote = partage
     autostage = true
 ['remote "lake"']
     url = s3://dvc

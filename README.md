@@ -100,33 +100,49 @@ docker compose down     # arrête le data lake (les données sont conservées)
 
 ## 🗂️ Versionnage des données (DVC)
 
-Git versionne le code, **DVC versionne les données**. Les fichiers lourds restent hors de Git : Git ne garde que de petits fichiers d'empreintes (`data/raw.dvc`, `dvc.lock`), et le contenu est stocké dans le compartiment `dvc` du data lake RustFS (remote DVC `lake`). Chaque commit Git correspond ainsi à une version exacte des données et des résultats.
+Git versionne le code, **DVC versionne les données**. Les fichiers lourds restent hors de Git : Git ne garde que de petits fichiers d'empreintes (`data/raw.dvc`, `dvc.lock`), et le contenu est stocké dans un **dossier OneDrive partagé** entre les membres de l'équipe (remote DVC `partage`, celui par défaut). Chaque commit Git correspond ainsi à une version exacte des données et des résultats.
 
 - **Données brutes** (`data/raw/`) : versionnées par `data/raw.dvc`. Elles ne se recalculent pas (copie Kaggle, collectes API), donc on les fige après chaque collecte.
 - **Pipeline** (`dvc.yaml`) : `prepare` et `transform_*` (brut → propre), puis `clustering`, `rules` et `classification`. `dvc repro` ne relance que les étapes dont le code ou les entrées ont changé, et `dvc.lock` enregistre les empreintes de chaque entrée et sortie.
 - **Résultats** (`reports/`) : produits par le pipeline mais laissés dans Git, pour rester lisibles sur GitHub.
 
 **Première installation (une fois par PC) :**
-```bash
-uv tool install "dvc[s3]"      # DVC est installé à part (conflit de versions avec boto3)
-docker compose up -d            # le data lake crée aussi le compartiment dvc
-dvc remote modify --local lake access_key_id <S3_ACCESS_KEY du .env>
-dvc remote modify --local lake secret_access_key <S3_SECRET_KEY du .env>
-```
-Les identifiants vont dans `.dvc/config.local`, qui n'est jamais envoyé sur GitHub.
+
+1. Installer DVC (à part du projet, à cause d'un conflit de versions avec boto3) :
+   ```bash
+   uv tool install "dvc[s3]"
+   ```
+2. Avoir le dossier partagé **`Panier-Vert-DVC`** synchronisé sur son PC : sur onedrive.live.com, ouvrir **Partagés**, faire un clic droit sur `Panier-Vert-DVC`, puis **Ajouter un raccourci à Mes fichiers**. Il apparaît dans l'explorateur, sous `OneDrive`.
+3. Donner à DVC le chemin de ce dossier **sur son PC** (le chemin diffère d'un PC à l'autre, d'où `--local`) :
+   ```bash
+   dvc remote add --local partage "C:\Users\<moi>\OneDrive\Panier-Vert-DVC"
+   ```
+4. Conseillé, si le projet est lui-même dans OneDrive : mettre le cache DVC hors de OneDrive, pour ne pas synchroniser les données en double :
+   ```bash
+   dvc cache dir --local "C:\Users\<moi>\.dvc-cache\panier-vert"
+   ```
+
+Ces réglages vont dans `.dvc/config.local`, qui n'est jamais envoyé sur GitHub.
 
 **Au quotidien :**
 ```bash
 make data-version   # après une collecte : nouvelle version de data/raw (dvc add)
 make repro          # rejoue les étapes du pipeline qui ont changé
-make push           # envoie les données versionnées sur le data lake
-git add data/raw.dvc dvc.lock reports && git commit -m "..."
-make pull           # récupère les données correspondant au commit courant
+make push           # envoie les données versionnées dans le dossier partagé
+git add data/raw.dvc dvc.lock reports && git commit -m "..." && git push
 ```
 
+**Récupérer les données d'un coéquipier :**
+```bash
+git pull            # récupère data/raw.dvc et dvc.lock
+make pull           # récupère les données correspondantes (dvc pull)
+```
+
+> Attendre que OneDrive ait fini de synchroniser (icône ✓) avant `make pull` chez l'autre, et ne jamais modifier à la main le contenu de `Panier-Vert-DVC`.
+>
 > Pour revenir à une ancienne version des données : `git checkout <commit>` puis `dvc checkout`.
 >
-> Le data lake RustFS tourne sur chaque PC (`localhost`) : un `dvc pull` ne marche que sur le PC qui a fait le `dvc push`. Pour partager les versions entre les membres de l'équipe, il faudrait un remote commun (serveur S3 partagé ou dossier synchronisé).
+> Le remote `lake` (data lake RustFS local) reste disponible comme sauvegarde personnelle : `dvc push -r lake`.
 
 ## ✅ Intégration continue et quality gate (GitHub Actions)
 

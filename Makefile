@@ -39,6 +39,6 @@ data-version: ; dvc add data/raw
 # Rejoue uniquement les étapes du pipeline dont les entrées ont changé (dvc.yaml)
 repro: ; dvc repro
 
-# Envoie / récupère les versions de données sur le remote RustFS (bucket « dvc »)
+# Envoie / récupère les versions de données dans le dossier OneDrive partagé (remote « partage »)
 push: ; dvc push
 pull: ; dvc pull
