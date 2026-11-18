@@ -80,3 +80,20 @@ make test          # tests automatiques (10 tests)
 ```
 
 > `make off` interroge l'API produit par produit (environ 15 codes par minute) : la collecte complète prend plusieurs heures. Elle est **incrémentale** : on peut l'arrêter (Ctrl + C) et la relancer, elle reprend où elle s'était arrêtée.
+
+
+## 🐳 Data lake (Docker + RustFS)
+
+Les données peuvent aussi être rangées dans un **data lake S3** local, RustFS, lancé avec Docker. Il reprend les deux zones du projet : le compartiment `raw` (données brutes) et le compartiment `processed` (données validées par les contrats Pandera).
+
+```bash
+cp .env.example .env    # première fois : puis changer les mots de passe dans .env
+docker compose up -d    # démarre RustFS et crée les compartiments raw et processed
+make lake               # envoie data/raw et data/processed (incrémental)
+docker compose down     # arrête le data lake (les données sont conservées)
+```
+
+- **Console web :** http://localhost:9001 (identifiants du fichier `.env`)
+- **Incrémental :** un fichier déjà présent avec la même taille n'est pas renvoyé.
+- **Services optionnels :** `docker compose --profile restitution up -d` (PostgreSQL + Adminer) et `docker compose --profile mlops up -d` (MLflow, prévu pour le J3).
+- **Sécurité :** `.env` contient les mots de passe et n'est jamais envoyé sur GitHub (il est dans `.gitignore`) ; seul le modèle `.env.example` est versionné.
