@@ -1,0 +1,102 @@
+# ============================================================================
+#  Stack Docker du projet Panier Vert (MSPR Data Mining)
+# ============================================================================
+#  Data lake seul (S3)       : docker compose up -d
+#  + Base de restitution     : docker compose --profile restitution up -d
+#  + Suivi des modèles (J3)  : docker compose --profile mlops up -d
+#  Tout                      : docker compose --profile restitution --profile mlops up -d
+#  Arrêter                   : docker compose --profile "*" down
+#  Identifiants              : fichier .env (copier .env.example en .env, jamais dans Git)
+#
+#  Les scripts Python (collecte, préparation, modèles) restent lancés avec uv
+#  et make, en dehors de Docker. Docker ne sert qu'aux services de stockage.
+# ============================================================================
+name: panier-vert
+
+services:
+
+  # --- Data lake S3 : RustFS (remplaçant gratuit de MinIO) ------------------
+  rustfs-init:            # donne les droits du volume à RustFS, puis s'arrête
+    image: alpine:3.20
+    command: sh -c "chown -R 10001:10001 /data && echo volume pret"
+    volumes:
+      - lake-data:/data
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    ports:
+      - "9000:9000"   # API S3 (utilisée par les scripts Python)
+      - "9001:9001"   # Console web -> http://localhost:9001
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-rustfsadmin}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-rustfsadmin}
+      RUSTFS_UNSAFE_BYPASS_DISK_CHECK: "true"   # un seul disque : usage local uniquement
+    volumes:
+      - lake-data:/data
+    depends_on:
+      rustfs-init:
+        condition: service_completed_successfully
+
+  # Crée les 2 zones du data lake au démarrage, puis s'arrête :
+  #   raw       = données brutes (instacart, rappelconso, rnm, off)
+  #   processed = données propres validées par les contrats Pandera
+  lake-buckets:
+    image: amazon/aws-cli:latest
+    depends_on:
+      - rustfs
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin}
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: >
+      sh -c "sleep 5 &&
+             for b in raw processed; do
+               aws --endpoint-url http://rustfs:9000 s3 mb s3://$$b || true;
+             done &&
+             echo buckets raw et processed prets"
+
+  # --- Base de restitution (profil « restitution ») -------------------------
+  # Tables finales pour le tableau de bord (segments, recommandations, alertes)
+  postgres:
+    profiles: ["restitution"]
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${PG_USER:-panier}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-panier}
+      POSTGRES_DB: ${PG_DB:-panier_vert}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+  adminer:              # console web pour voir les tables et lancer du SQL
+    profiles: ["restitution"]
+    image: adminer:latest
+    ports:
+      - "8080:8080"   # -> http://localhost:8080 (Système PostgreSQL, serveur postgres)
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      - postgres
+
+  # --- Suivi des expériences de modèles (profil « mlops », J3) -------------
+  mlflow:
+    profiles: ["mlops"]
+    image: ghcr.io/mlflow/mlflow:latest
+    ports:
+      - "5000:5000"   # -> http://localhost:5000
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+    volumes:
+      - mlflow-data:/mlflow
+
+volumes:
+  lake-data:
+  pg-data:
+  mlflow-data:
