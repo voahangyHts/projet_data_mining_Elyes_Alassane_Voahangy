@@ -1,0 +1,40 @@
+artifact_path: mlflow-artifacts:/1/models/m-57f98956658e4dfd9437e812132f70de/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.12.16
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.9.1
+    skops_trusted_types: null
+is_signature_from_type_hint: false
+mlflow_version: 3.18.0
+model_id: m-57f98956658e4dfd9437e812132f70de
+model_size_bytes: 1869
+model_uuid: m-57f98956658e4dfd9437e812132f70de
+prompts: null
+run_id: 54964640b20948a1b2355d8276e8742c
+signature:
+  inputs: '[{"type": "long", "name": "up_nb_achats", "required": true}, {"type": "double",
+    "name": "up_taux", "required": true}, {"type": "integer", "name": "up_commandes_depuis",
+    "required": true}, {"type": "double", "name": "up_position_moy", "required": true},
+    {"type": "integer", "name": "nb_commandes", "required": true}, {"type": "float",
+    "name": "delai_moyen", "required": true}, {"type": "double", "name": "panier_moyen",
+    "required": true}, {"type": "double", "name": "user_taux_reachat", "required":
+    true}, {"type": "long", "name": "prod_nb_achats", "required": true}, {"type":
+    "double", "name": "prod_taux_reachat", "required": true}, {"type": "integer",
+    "name": "bio", "required": true}, {"type": "integer", "name": "frais", "required":
+    true}, {"type": "float", "name": "delai_cible", "required": true}, {"type": "integer",
+    "name": "jour_cible", "required": true}, {"type": "integer", "name": "heure_cible",
+    "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int8", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-11-18 13:43:40.122364'

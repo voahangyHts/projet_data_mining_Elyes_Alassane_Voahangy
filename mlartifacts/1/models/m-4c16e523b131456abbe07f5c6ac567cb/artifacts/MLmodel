@@ -1,0 +1,44 @@
+artifact_path: mlflow-artifacts:/1/models/m-4c16e523b131456abbe07f5c6ac567cb/artifacts
+flavors:
+  python_function:
+    data: model.ubj
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.xgboost
+    python_version: 3.12.16
+  xgboost:
+    code: null
+    data: model.ubj
+    model_class: xgboost.sklearn.XGBClassifier
+    model_format: ubj
+    xgb_version: 3.4.1
+is_signature_from_type_hint: false
+mlflow_version: 3.18.0
+model_id: m-4c16e523b131456abbe07f5c6ac567cb
+model_size_bytes: 1376579
+model_uuid: m-4c16e523b131456abbe07f5c6ac567cb
+prompts: null
+run_id: 651c2ad0bc3c4ec788775ac02c4e7a39
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "long", "name": "up_nb_achats", "required": true}, {"type": "double",
+    "name": "up_taux", "required": true}, {"type": "integer", "name": "up_commandes_depuis",
+    "required": true}, {"type": "double", "name": "up_position_moy", "required": true},
+    {"type": "integer", "name": "nb_commandes", "required": true}, {"type": "float",
+    "name": "delai_moyen", "required": true}, {"type": "double", "name": "panier_moyen",
+    "required": true}, {"type": "double", "name": "user_taux_reachat", "required":
+    true}, {"type": "long", "name": "prod_nb_achats", "required": true}, {"type":
+    "double", "name": "prod_taux_reachat", "required": true}, {"type": "integer",
+    "name": "bio", "required": true}, {"type": "integer", "name": "frais", "required":
+    true}, {"type": "float", "name": "delai_cible", "required": true}, {"type": "integer",
+    "name": "jour_cible", "required": true}, {"type": "integer", "name": "heure_cible",
+    "required": true}]'
+  outputs: '[{"type": "long", "required": true}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-11-18 13:55:08.430709'
