@@ -76,7 +76,7 @@ make rappelconso   # RappelConso : collecte incrémentale + transformation
 make rnm           # RNM : scraping des prix + transformation
 make off           # Open Food Facts : collecte incrémentale (longue) + transformation
 make prepare       # Instacart : nettoyage + contrat de données
-make test          # tests automatiques (10 tests)
+make test          # tests automatiques (14 tests)
 ```
 
 > `make off` interroge l'API produit par produit (environ 15 codes par minute) : la collecte complète prend plusieurs heures. Elle est **incrémentale** : on peut l'arrêter (Ctrl + C) et la relancer, elle reprend où elle s'était arrêtée.
@@ -119,3 +119,20 @@ docker run --rm -p 3000:3000 reachat:latest
 - **Couple inconnu** : erreur 404 explicite, aucune prédiction inventée.
 - **Limite** : l'API ne connaît que les 30 000 clients de l'échantillon d'entraînement.
 - **Testé** : temps de réponse de 25 à 190 ms ; résultats identiques en local et dans le conteneur Docker.
+
+
+
+## 🧪 Suivi des modèles (MLflow)
+
+```bash
+docker compose --profile mlops up -d   # lance MLflow -> http://localhost:5000 (mode « Model training »)
+make train                             # entraîne baseline + XGBoost et les trace dans MLflow
+```
+
+- **Runs tracés :** `baseline_logreg` et `xgboost_modele` (paramètres, métriques, SHAP, équité par segment, modèle).
+- **Validation croisée :** 5 plis groupés par client (`GroupKFold`) → ROC-AUC moyen **0,832**, proche du test (**0,834**) : modèle stable.
+- **Reproductible :** table triée (`user_id`, `product_id`) et graine fixe → mêmes métriques à chaque lancement.
+- **Registre :** modèle `reachat_xgb`, alias **`@champion`**.
+- **Quality gate :** une nouvelle version ne devient champion que si son ROC-AUC est au moins égal à celui du champion actuel ; testée par `tests/test_quality_gate.py`.
+- **Adresse du serveur :** variable `MLFLOW_TRACKING_URI` (par défaut `http://localhost:5000`).
+- **Limite :** chaque membre a son propre serveur MLflow (local) ; un serveur partagé serait une amélioration possible.
