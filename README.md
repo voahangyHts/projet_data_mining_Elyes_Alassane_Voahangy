@@ -208,6 +208,24 @@ docker run --rm -p 3000:3000 reachat:latest
 
 
 
+## 📊 Dashboard (Streamlit)
+
+Le dashboard restitue les résultats pour chaque public. Il **ne recalcule rien** : il lit les résultats du pipeline et interroge l'API de réachat.
+
+```bash
+make api         # 1er terminal : lance l'API (http://localhost:3000)
+make dashboard   # 2e terminal : lance le dashboard (http://localhost:8501)
+```
+
+| Page | Public | Contenu |
+|---|---|---|
+| Direction (`dashboard/app.py`) | direction | chiffres clés, répartition des 3 profils de clients, action recommandée par profil |
+| Marketing CRM (`dashboard/pages/1_Marketing_CRM.py`) | marketing / CRM | pour un client : son profil, les produits à lui proposer (appel à `/recommandations`), la raison du score, export CSV |
+
+- **Accessibilité :** information jamais codée par la couleur seule (« Oui / Non » écrit), barres horizontales triées, résumé texte et source sous chaque visuel, libellés sans jargon.
+- **Transparence :** chaque recommandation affiche sa raison (nombre d'achats du produit, commandes depuis le dernier achat : variables les plus influentes selon SHAP) ; le score aide à décider, l'action reste humaine.
+- **Adresse de l'API :** variable `API_REACHAT` (par défaut `http://localhost:3000`).
+
 ## 🧪 Suivi des modèles (MLflow)
 
 ```bash
