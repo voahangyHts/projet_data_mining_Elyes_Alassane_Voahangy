@@ -14,8 +14,8 @@ stages:
       size: 5739
     - path: src/schemas.py
       hash: md5
-      md5: 9880c8aba3a8609c98a7d2ed9708faa9
-      size: 5031
+      md5: 751935229425ab6b068a1ccb09ea221a
+      size: 5838
     outs:
     - path: data/processed/aisles.parquet
       hash: md5
@@ -51,8 +51,8 @@ stages:
       nfiles: 1
     - path: src/schemas.py
       hash: md5
-      md5: 9880c8aba3a8609c98a7d2ed9708faa9
-      size: 5031
+      md5: 751935229425ab6b068a1ccb09ea221a
+      size: 5838
     - path: src/transform_rappelconso.py
       hash: md5
       md5: 2bef4bd8a5ea5e9afba7ae58891b187d
@@ -72,8 +72,8 @@ stages:
       nfiles: 3
     - path: src/schemas.py
       hash: md5
-      md5: 9880c8aba3a8609c98a7d2ed9708faa9
-      size: 5031
+      md5: 751935229425ab6b068a1ccb09ea221a
+      size: 5838
     - path: src/transform_rnm.py
       hash: md5
       md5: 8ff96572b6476b0ea4248100e7e08884
@@ -93,8 +93,8 @@ stages:
       nfiles: 205
     - path: src/schemas.py
       hash: md5
-      md5: 9880c8aba3a8609c98a7d2ed9708faa9
-      size: 5031
+      md5: 751935229425ab6b068a1ccb09ea221a
+      size: 5838
     - path: src/transform_off.py
       hash: md5
       md5: a8599744feb2941865132e4722cf5504
@@ -102,8 +102,8 @@ stages:
     outs:
     - path: data/processed/off_produits.parquet
       hash: md5
-      md5: 45fd51bd072217015af610364a090235
-      size: 230615
+      md5: 94e8dda441fcb45e4cd977b62af5ac4e
+      size: 230167
   clustering:
     cmd: uv run python -m src.clustering
     deps:
@@ -125,13 +125,13 @@ stages:
       size: 796166
     - path: src/clustering.py
       hash: md5
-      md5: 1871ff514c9687ab7e035776c404d262
-      size: 6039
+      md5: 26d949a7b2be57bc78eaf3b64916deca
+      size: 8940
     outs:
     - path: data/processed/segments_clients.parquet
       hash: md5
-      md5: c5b731c23b44b762b7687df5c7004919
-      size: 584397
+      md5: 0cd6917a3dc549ad19428d2ee7ef5c4e
+      size: 626908
     - path: reports/choix_k.png
       hash: md5
       md5: 102684156debce8b755ebd90d76b6985
@@ -142,8 +142,8 @@ stages:
       size: 249080
     - path: reports/segments_profils.csv
       hash: md5
-      md5: 3e0182824c207e46aef5d753279f14be
-      size: 238
+      md5: 87498430c6839d81068fdc177d9c88ec
+      size: 336
   rules:
     cmd: uv run python -m src.rules
     deps:
@@ -165,8 +165,8 @@ stages:
       size: 796166
     - path: src/rules.py
       hash: md5
-      md5: e79ce2bf757b335d7416daa7141b10e7
-      size: 5913
+      md5: 10674f4710ade13e48fcad3b8d1f5a00
+      size: 7604
     outs:
     - path: reports/regles_produits.csv
       hash: md5
@@ -201,17 +201,17 @@ stages:
       size: 796166
     - path: data/processed/segments_clients.parquet
       hash: md5
-      md5: c5b731c23b44b762b7687df5c7004919
-      size: 584397
+      md5: 0cd6917a3dc549ad19428d2ee7ef5c4e
+      size: 626908
     - path: src/classification.py
       hash: md5
-      md5: b9f14df62ff4d42873cfc0a7c88a5ffb
-      size: 9238
+      md5: dd5909216807d53a7ce397f9974a0559
+      size: 11655
     outs:
     - path: reports/classification_resultats.csv
       hash: md5
-      md5: c60d79486f33c21e335fd2cf85393bb1
-      size: 159
+      md5: a8207ef166e01f2ea1c63949b52ad067
+      size: 133
     - path: reports/shap_reachat.png
       hash: md5
       md5: 6cc53a78dd7c0c1efc01927338b195ae
@@ -221,13 +221,13 @@ stages:
     deps:
     - path: reports/champion.json
       hash: md5
-      md5: 548f9bcdaed72b74e7fe32f196b64a65
-      size: 160
+      md5: bfbfb5462d5ba84a294d4253f984e1fd
+      size: 167
     - path: reports/classification_resultats.csv
       hash: md5
-      md5: c60d79486f33c21e335fd2cf85393bb1
-      size: 159
+      md5: a8207ef166e01f2ea1c63949b52ad067
+      size: 133
     - path: src/quality_gate.py
       hash: md5
-      md5: ba94be310bc8f0398f931b4ee8c29d13
-      size: 3287
+      md5: 36683e45c5c219445fce33738c06e0e0
+      size: 3372

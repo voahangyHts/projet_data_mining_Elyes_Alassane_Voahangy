@@ -1,0 +1,7 @@
+# Fins de ligne : toujours LF (format Linux) pour les fichiers suivis aussi par DVC.
+# Sans ça, Git sous Windows les réécrit en CRLF : leur empreinte change
+# et « dvc status » les croit modifiés alors que leur contenu est identique.
+reports/*.csv text eol=lf
+dvc.yaml text eol=lf
+dvc.lock text eol=lf
+*.dvc text eol=lf
