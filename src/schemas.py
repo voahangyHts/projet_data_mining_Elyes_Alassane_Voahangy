@@ -144,3 +144,25 @@ class OffProduits(pa.DataFrameModel):
         strict = True
         coerce = False
 
+
+class RappelsEnrichis(Rappels):
+    """Table « or » : rappel RappelConso + fiche Open Food Facts (jointure par code-barres)."""
+
+    trouve_off: pl.Boolean
+    nom_off: pl.String = pa.Field(nullable=True)
+    marques_off: pl.String = pa.Field(nullable=True)
+    categories: pl.String = pa.Field(nullable=True)
+    nutriscore: pl.String = pa.Field(
+        isin=["a", "b", "c", "d", "e"], nullable=True
+    )
+    ecoscore: pl.String = pa.Field(
+        isin=["a-plus", "a", "b", "c", "d", "e", "f"], nullable=True
+    )
+    nova: pl.Int64 = pa.Field(ge=1, le=4, nullable=True)
+    allergenes: pl.String = pa.Field(nullable=True)
+    vendu_en_france: pl.Boolean = pa.Field(nullable=True)
+
+    class Config:
+        strict = True
+        coerce = False
+        unique = ["id", "gtin"]

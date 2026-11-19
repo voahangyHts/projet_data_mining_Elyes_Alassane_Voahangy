@@ -119,3 +119,14 @@ docker run --rm -p 3000:3000 reachat:latest
 - **Couple inconnu** : erreur 404 explicite, aucune prédiction inventée.
 - **Limite** : l'API ne connaît que les 30 000 clients de l'échantillon d'entraînement.
 - **Testé** : temps de réponse de 25 à 190 ms ; résultats identiques en local et dans le conteneur Docker.
+
+
+### Architecture médaillon
+
+| Niveau | Chez Panier Vert | Contenu |
+|---|---|---|
+| 🥉 Bronze | `data/raw/` | données brutes, telles que reçues des sources |
+| 🥈 Silver | `data/processed/` | tables nettoyées et validées par les contrats Pandera |
+| 🥇 Gold | tables métier de `data/processed/` | `features_reachat` (API), `segments_clients` (segmentation), `rappels_enrichis` (rappels + Open Food Facts) |
+
+`make enrichir` construit `rappels_enrichis.parquet` : les 14 548 rappels, dont 7 909 (54,4 %) enrichis de leur fiche Open Food Facts. Couverture forte pour les produits laitiers (70 %), faible pour la viande (36 %, souvent des produits à la coupe sans code-barres standard).
