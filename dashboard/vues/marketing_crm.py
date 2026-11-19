@@ -20,9 +20,6 @@ ACTIONS = {
     "Occasionnels petits paniers": "Coupons Fruits/Légumes et Bio pour gonfler le panier",
 }
 
-st.set_page_config(page_title="Panier Vert · Marketing / CRM", page_icon="🛒", layout="wide")
-
-
 @st.cache_data
 def charger():
     segments = pl.read_parquet(DONNEES / "segments_clients.parquet")
