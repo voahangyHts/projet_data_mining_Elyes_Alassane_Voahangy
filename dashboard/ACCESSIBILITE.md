@@ -29,9 +29,10 @@ les garder (convention connue) mais avec le contour `#767676` et la lettre écri
 
 | Page | 1 Contraste | 2 Couleur seule | 3 Titres | 4 Unités | 5 Sources | 6 Alternative |
 |---|---|---|---|---|---|---|
+| Accueil · Vue Direction | ✅ (vert corrigé : `#1B5E20` → `#2E7D32`) | ✅ | ✅ | ✅ | ✅ | ✅ (tableau des profils) |
+| Marketing / CRM | ✅ | ✅ (« ✔ Oui / Non » écrit) | ✅ | ✅ | ✅ | ✅ (tableau + export CSV) |
 | Qualité catalogue | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Équipe data | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Pages de Voahangy | à vérifier avec cette grille | | | | | |
 
 Vérifié en navigateur : aucune erreur, structure de titres h1 → h2, chaque barre et
 chaque axe ont une étiquette lue par les lecteurs d'écran (générée par Vega).

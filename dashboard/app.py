@@ -55,6 +55,26 @@ if "role" not in st.session_state:
     st.navigation([st.Page(ecran_connexion, title="Connexion", icon="🔒")], position="hidden").run()
     st.stop()
 
+ PAN-finitions-dashboard
+# 2. Répartition des clients par profil
+st.subheader("Répartition des clients par profil")
+profils = segments.with_columns(part=pl.col("nb_clients") / nb_clients).sort("nb_clients")
+graphique = px.bar(
+    profils.to_pandas(), x="nb_clients", y="nom_segment", orientation="h",
+    text=[f"{n:,} clients ({p:.1%})".replace(",", " ").replace(".", ",") for n, p in zip(profils["nb_clients"], profils["part"])],
+    labels={"nb_clients": "Nombre de clients", "nom_segment": ""},
+    # une seule couleur : l'information est dans le texte. #2E7D32 : contraste
+    # 5,1:1 sur fond clair et 3,7:1 sur fond sombre (#1B5E20 tombait à 2,4:1
+    # en thème sombre) ; texte blanc dessus : 5,1:1 (voir dashboard/ACCESSIBILITE.md)
+    color_discrete_sequence=["#2E7D32"],
+)
+graphique.update_traces(textposition="inside", textfont_color="white",
+                        hovertemplate="%{y} : %{x:,} clients<extra></extra>")
+graphique.update_layout(height=280, margin=dict(l=10, r=10, t=10, b=10))
+st.plotly_chart(graphique, use_container_width=True)
+st.caption("Résumé : trois profils de taille proche, de 32,7 % à 34,5 % des clients chacun. "
+           "Source : segmentation K-means (k = 3) sur 206 209 clients Instacart.")
+
 role = st.session_state.role
 pages = [
     st.Page(ICI / fichier, title=titre, icon=icone)
@@ -66,5 +86,6 @@ with st.sidebar:
     if st.button("Se déconnecter"):
         st.session_state.clear()
         st.rerun()
+ main
 
 st.navigation(pages).run()
