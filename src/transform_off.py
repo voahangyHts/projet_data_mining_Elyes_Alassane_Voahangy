@@ -88,8 +88,10 @@ def main():
     brut = pl.read_parquet(BRUT)
     log.info("%d lignes brutes lues", brut.height)
 
-    # Un code interrogé deux fois : on garde la réponse la plus récente
-    brut = brut.sort("_ingested_at").unique(subset="code", keep="last")
+    # Un code interrogé deux fois : on garde la réponse la plus récente.
+    # Tri final par code : unique() rend les lignes dans un ordre aléatoire,
+    # le fichier changerait à chaque exécution (et dvc.lock avec lui).
+    brut = brut.sort("_ingested_at").unique(subset="code", keep="last").sort("code")
 
     trouves = brut.filter(
         (pl.col("status") == "1") & pl.col("json_produit").is_not_null()

@@ -97,13 +97,13 @@ stages:
       size: 5838
     - path: src/transform_off.py
       hash: md5
-      md5: a8599744feb2941865132e4722cf5504
-      size: 3826
+      md5: 76b9f1747e88a9cec244c1002341b4b6
+      size: 3993
     outs:
     - path: data/processed/off_produits.parquet
       hash: md5
-      md5: 94e8dda441fcb45e4cd977b62af5ac4e
-      size: 230167
+      md5: 7b1e04cd5eeeb75e6a68ec6ff6a135e4
+      size: 207576
   clustering:
     cmd: uv run python -m src.clustering
     deps:
