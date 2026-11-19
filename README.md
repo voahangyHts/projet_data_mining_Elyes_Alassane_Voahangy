@@ -129,7 +129,10 @@ docker compose --profile mlops up -d   # lance MLflow -> http://localhost:5000 (
 make train                             # entraîne baseline + XGBoost et les trace dans MLflow
 ```
 
-- **Runs tracés :** `baseline_logreg` et `xgboost_modele` (paramètres, métriques, SHAP, équité par segment, modèle).
+- **4 modèles tracés, dans 3 expériences :**
+  - `prediction_reachat` : baseline (régression logistique) et XGBoost (paramètres, métriques, SHAP, équité par segment, modèle) — `make train` ;
+  - `segmentation_clients` : K-means, un run par k testé (inertie, silhouette) + k retenu, graphiques et modèle ; segments nommés automatiquement d'après leur profil — `uv run python -m src.clustering` ;
+  - `regles_association` : FP-Growth au niveau rayons et produits (seuils, nombre de règles, lift maximal, top 5) — `uv run python -m src.rules`.
 - **Validation croisée :** 5 plis groupés par client (`GroupKFold`) → ROC-AUC moyen **0,832**, proche du test (**0,834**) : modèle stable.
 - **Reproductible :** table triée (`user_id`, `product_id`) et graine fixe → mêmes métriques à chaque lancement.
 - **Registre :** modèle `reachat_xgb`, alias **`@champion`**.

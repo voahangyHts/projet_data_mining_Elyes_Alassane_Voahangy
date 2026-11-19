@@ -4,11 +4,17 @@ Deux niveaux d'analyse :
 - rayons (134 aisles)       -> implantation des rayons en magasin
 - produits (top 200 ventes) -> ventes croisées entre rayons et offres groupées
 
+Chaque niveau est tracé dans MLflow (expérience « regles_association ») :
+paramètres, nombre de règles, lift maximal et top 5 des règles.
+
+Prérequis : MLflow lancé (docker compose --profile mlops up -d)
 Lancement : uv run python -m src.rules
 """
 
+import os
 from pathlib import Path
 
+import mlflow
 import pandas as pd
 import polars as pl
 from mlxtend.frequent_patterns import association_rules, fpgrowth
@@ -19,6 +25,7 @@ SORTIE = Path("reports")
 GRAINE = 42             # graine aléatoire fixée : même échantillon à chaque exécution
 NB_COMMANDES = 300_000  # échantillon de commandes (sur 3,2 M)
 NB_PRODUITS = 200       # produits les plus vendus gardés pour l'analyse par produit
+MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
 
 
 def get_association_rules(transactions, min_support=0.05, min_lift=1.2, min_confidence=0.6, top=5):
@@ -40,6 +47,21 @@ def get_association_rules(transactions, min_support=0.05, min_lift=1.2, min_conf
     top_rules = rules[rules["confidence"] >= min_confidence].sort_values("lift", ascending=False)
     print(f"  {len(frequent_itemsets)} ensembles fréquents, {len(rules)} règles avec lift >= {min_lift}, "
           f"{len(top_rules)} avec confiance >= {min_confidence}")
+
+    # Traçabilité MLflow (si un run est ouvert)
+    if mlflow.active_run():
+        mlflow.log_params({
+            "min_support": min_support,
+            "min_lift": min_lift,
+            "min_confidence": min_confidence,
+            "nb_paniers": len(transactions),
+        })
+        mlflow.log_metrics({
+            "nb_ensembles_frequents": len(frequent_itemsets),
+            "nb_regles_lift": len(rules),
+            "nb_regles_retenues": len(top_rules),
+            "lift_max": float(top_rules["lift"].max()) if len(top_rules) else 0.0,
+        })
     return top_rules if top is None else top_rules.head(top)
 
 
@@ -80,6 +102,9 @@ def main() -> None:
     pd.set_option("display.width", 200)
     pd.set_option("display.max_colwidth", 45)
     SORTIE.mkdir(exist_ok=True)
+    mlflow.set_tracking_uri(MLFLOW_URI)
+    mlflow.set_experiment("regles_association")
+    parametres_communs = {"nb_commandes": NB_COMMANDES, "graine": GRAINE, "algorithme": "FP-Growth"}
 
     # 1. Échantillon de commandes
     commandes = (
@@ -104,9 +129,12 @@ def main() -> None:
         lignes.group_by("order_id").agg(pl.col("aisle").unique()).get_column("aisle").to_list()
     )
     print("\n=== Règles entre RAYONS (implantation en magasin) ===")
-    top_rayons = lisible(get_association_rules(paniers_rayons, min_support=0.05, min_lift=1.2, min_confidence=0.6))
-    print(top_rayons.to_string(index=False))
-    top_rayons.to_csv(SORTIE / "regles_rayons.csv", index=False)
+    with mlflow.start_run(run_name="fpgrowth_rayons"):
+        mlflow.log_params({**parametres_communs, "niveau": "rayons"})
+        top_rayons = lisible(get_association_rules(paniers_rayons, min_support=0.05, min_lift=1.2, min_confidence=0.6))
+        print(top_rayons.to_string(index=False))
+        top_rayons.to_csv(SORTIE / "regles_rayons.csv", index=False)
+        mlflow.log_artifact(str(SORTIE / "regles_rayons.csv"), artifact_path="regles")
 
     # 3. Niveau PRODUITS : on garde les 200 produits les plus vendus
     top_produits = (
@@ -122,11 +150,16 @@ def main() -> None:
     rayon_de = dict(lignes.select("product_name", "aisle").unique().iter_rows())
 
     print(f"\n=== Règles entre PRODUITS – {len(paniers_produits):,} paniers ===")
-    toutes = get_association_rules(paniers_produits, min_support=0.003, min_lift=1.5, min_confidence=0.1, top=None)
-    croisees = lisible(ventes_croisees(toutes, rayon_de).head(5))
-    print("Top 5 des ventes croisées entre rayons différents :")
-    print(croisees.to_string(index=False))
-    croisees.to_csv(SORTIE / "regles_produits.csv", index=False)
+    with mlflow.start_run(run_name="fpgrowth_produits"):
+        mlflow.log_params({**parametres_communs, "niveau": "produits", "nb_produits": NB_PRODUITS})
+        toutes = get_association_rules(paniers_produits, min_support=0.003, min_lift=1.5, min_confidence=0.1, top=None)
+        toutes_croisees = ventes_croisees(toutes, rayon_de)
+        croisees = lisible(toutes_croisees.head(5))
+        print("Top 5 des ventes croisées entre rayons différents :")
+        print(croisees.to_string(index=False))
+        croisees.to_csv(SORTIE / "regles_produits.csv", index=False)
+        mlflow.log_metric("nb_ventes_croisees", len(toutes_croisees))
+        mlflow.log_artifact(str(SORTIE / "regles_produits.csv"), artifact_path="regles")
 
     print(f"\nRésultats enregistrés dans {SORTIE}/")
 
