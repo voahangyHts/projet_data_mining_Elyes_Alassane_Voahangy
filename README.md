@@ -76,7 +76,7 @@ make rappelconso   # RappelConso : collecte incrémentale + transformation
 make rnm           # RNM : scraping des prix + transformation
 make off           # Open Food Facts : collecte incrémentale (longue) + transformation
 make prepare       # Instacart : nettoyage + contrat de données
-make test          # tests automatiques (10 tests)
+make test          # tests automatiques (14 tests)
 ```
 
 > `make off` interroge l'API produit par produit (environ 15 codes par minute) : la collecte complète prend plusieurs heures. Elle est **incrémentale** : on peut l'arrêter (Ctrl + C) et la relancer, elle reprend où elle s'était arrêtée.
@@ -104,7 +104,7 @@ docker compose down     # arrête le data lake (les données sont conservées)
 L'API sert le modèle XGBoost du J2 : pour un client et un produit qu'il a déjà acheté, elle donne la probabilité qu'il le rachète à sa prochaine commande.
 
 ```bash
-make modele       # entraîne XGBoost, l'enregistre dans BentoML (seuil 0,23) + table des caractéristiques
+make modele       # récupère le champion MLflow (@champion), l'enregistre dans BentoML + table des caractéristiques
 make api          # lance l'API en local -> http://localhost:3000 (documentation interactive)
 make api-docker   # construit l'image Docker de l'API
 docker run --rm -p 3000:3000 reachat:latest
@@ -115,18 +115,45 @@ docker run --rm -p 3000:3000 reachat:latest
 | `POST /predict` | `{"user_id": 184235, "product_id": 44683}` | `{"proba_reachat": 0.135, "recommander": false, "seuil": 0.23}` |
 | `POST /recommandations` | `{"user_id": 184235, "n": 5}` | les 5 produits les plus probables, avec leur nom et leur probabilité |
 
-- **Seuil** : 0,23, choisi sur la validation (F1 maximal) et enregistré avec le modèle.
+- **Seuil** : 0,22, choisi sur la validation (F1 maximal) et lu dans le run du champion MLflow.
 - **Couple inconnu** : erreur 404 explicite, aucune prédiction inventée.
 - **Limite** : l'API ne connaît que les 30 000 clients de l'échantillon d'entraînement.
 - **Testé** : temps de réponse de 25 à 190 ms ; résultats identiques en local et dans le conteneur Docker.
 
 
-### Architecture médaillon
 
-| Niveau | Chez Panier Vert | Contenu |
-|---|---|---|
-| 🥉 Bronze | `data/raw/` | données brutes, telles que reçues des sources |
-| 🥈 Silver | `data/processed/` | tables nettoyées et validées par les contrats Pandera |
-| 🥇 Gold | tables métier de `data/processed/` | `features_reachat` (API), `segments_clients` (segmentation), `rappels_enrichis` (rappels + Open Food Facts) |
+## 🧪 Suivi des modèles (MLflow)
 
-`make enrichir` construit `rappels_enrichis.parquet` : les 14 548 rappels, dont 7 909 (54,4 %) enrichis de leur fiche Open Food Facts. Couverture forte pour les produits laitiers (70 %), faible pour la viande (36 %, souvent des produits à la coupe sans code-barres standard).
+```bash
+docker compose --profile mlops up -d   # lance MLflow -> http://localhost:5000 (mode « Model training »)
+make train                             # entraîne baseline + XGBoost et les trace dans MLflow
+```
+
+- **Runs tracés :** `baseline_logreg` et `xgboost_modele` (paramètres, métriques, SHAP, équité par segment, modèle).
+- **Validation croisée :** 5 plis groupés par client (`GroupKFold`) → ROC-AUC moyen **0,832**, proche du test (**0,834**) : modèle stable.
+- **Reproductible :** table triée (`user_id`, `product_id`) et graine fixe → mêmes métriques à chaque lancement.
+- **Registre :** modèle `reachat_xgb`, alias **`@champion`**.
+- **Quality gate :** une nouvelle version ne devient champion que si son ROC-AUC est au moins égal à celui du champion actuel ; testée par `tests/test_quality_gate.py`.
+- **Adresse du serveur :** variable `MLFLOW_TRACKING_URI` (par défaut `http://localhost:5000`).
+- **Limite :** chaque membre a son propre serveur MLflow (local) ; un serveur partagé serait une amélioration possible.
+
+
+## 📈 Surveillance de la dérive (Evidently)
+
+Le rapport compare l'historique des commandes (`prior`, référence) aux dernières commandes de chaque client (`train`, courant), sur 50 000 commandes tirées au hasard dans chaque jeu.
+
+```bash
+make drift   # génère reports/drift_report.html
+```
+
+| Variable | Test | Score | Dérive |
+|---|---|---|---|
+| Délai depuis la commande précédente | Wasserstein | **0,711** | ⚠️ détectée (10,7 → 17,0 jours) |
+| Part de produits rachetés | Wasserstein | 0,096 | non |
+| Taille du panier | Wasserstein | 0,061 | non |
+| Jour de la semaine | Jensen-Shannon | 0,042 | non |
+| Heure de commande | Wasserstein | 0,027 | non |
+
+- **Lecture :** les habitudes (heure, jour, panier, réachat) sont stables ; seule la cadence change. C'est probablement un effet de la construction du jeu Instacart (la commande `train` est la dernière de chaque client) : à interpréter avec prudence.
+- **À surveiller :** le délai influence le réachat (hypothèse H1, SHAP). Une dérive qui toucherait aussi la part de rachats justifierait de réentraîner le modèle.
+- **Technique :** Evidently 0.7 n'est pas compatible avec pandas 3 (utilisé par le projet). `make drift` lance donc le script dans un environnement séparé avec pandas 2, sans modifier celui du projet.

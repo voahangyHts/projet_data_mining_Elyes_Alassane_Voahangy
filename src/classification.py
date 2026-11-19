@@ -3,7 +3,9 @@
 Lancement : uv run python -m src.classification
 """
 
+import os
 from pathlib import Path
+
 import joblib
 
 import matplotlib
@@ -28,8 +30,13 @@ import mlflow
 from mlflow import MlflowClient
 
 # ---- CONFIGURATION MLFLOW ----
-mlflow.set_tracking_uri("http://localhost:5001")
-mlflow.set_experiment("prediction_reachat")
+# Adresse du serveur : variable d'environnement MLFLOW_TRACKING_URI,
+# sinon le MLflow du docker-compose (profil mlops) sur le port 5000.
+# La connexion se fait dans main() : importer ce fichier (comme le fait
+# src/export_modele.py) ne doit pas exiger un serveur MLflow lancé.
+MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+EXPERIENCE = "prediction_reachat"
+NOM_MODELE = "reachat_xgb"
 
 P = "data/processed"
 SORTIE = Path("reports")
@@ -115,7 +122,21 @@ def evaluer(nom, y, proba, seuil):
         "precision": round(precision_score(y, pred), 3), "rappel": round(recall_score(y, pred), 3),
     }
 
+def auc_du_champion(client):
+    """ROC-AUC (test) du champion actuel, ou None s'il n'y en a pas encore."""
+    try:
+        version = client.get_model_version_by_alias(NOM_MODELE, "champion")
+    except mlflow.exceptions.MlflowException:
+        return None
+    return client.get_run(version.run_id).data.metrics.get("roc_auc")
+
+def peut_promouvoir(auc_nouveau, auc_champion):
+    """Quality gate : promouvoir seulement si le nouveau modèle est au moins aussi bon."""
+    return auc_champion is None or auc_nouveau >= auc_champion
+
 def main():
+    mlflow.set_tracking_uri(MLFLOW_URI)
+    mlflow.set_experiment(EXPERIENCE)
     SORTIE.mkdir(exist_ok=True)
     table = construire_table()
     taux = table["achete"].mean()
@@ -184,8 +205,9 @@ def main():
         test = test.join(segments, on="user_id", how="left")
         vrais_positifs = pl.col("pred") & (pl.col("achete") == 1)
         equite = test.group_by("segment").agg(rappel=vrais_positifs.sum() / (pl.col("achete") == 1).sum()).sort("segment")
-        for idx, row in enumerate(equite.iter_rows()):
-            mlflow.log_metric(f"equite_rappel_seg_{idx}", row[1])
+        for segment, rappel in equite.iter_rows():
+            if segment is not None:  # clients sans segment : ignorés
+                mlflow.log_metric(f"equite_rappel_seg_{segment}", rappel)
 
         # Création et sauvegarde SHAP
         echantillon = X.iloc[idx_test].sample(2_000, random_state=GRAINE)
@@ -200,7 +222,7 @@ def main():
         info = mlflow.xgboost.log_model(
             xgb, 
             artifact_path="modele",
-            registered_model_name="reachat_xgb",
+            registered_model_name=NOM_MODELE,
             input_example=X.iloc[idx_test].head(3)
         )
         
@@ -212,12 +234,23 @@ def main():
         mlflow.log_artifact(str(shap_file), artifact_path="figures")
         print("\nModèle XGBoost tracé dans MLflow et exporté en .joblib avec succès.")
 
-    # --- PROMOTION DU CHAMPION ---
-    print("\nPromotion du XGBoost en tant que Champion...")
-    MlflowClient().set_registered_model_alias(
-        "reachat_xgb", "champion", info.registered_model_version
-    )
-    print("Succès ! L'API peut désormais utiliser l'alias @champion.")
+    # --- QUALITY GATE : promotion seulement si le nouveau modèle est au moins aussi bon ---
+    client = MlflowClient()
+    auc_champion = auc_du_champion(client)
+    auc_nouveau = res_xgb["roc_auc"]
+    if peut_promouvoir(auc_nouveau, auc_champion):
+        client.set_registered_model_alias(
+            NOM_MODELE, "champion", info.registered_model_version
+        )
+        print(
+            f"\nQuality gate OK : ROC-AUC {auc_nouveau} >= champion {auc_champion}. "
+            f"Version {info.registered_model_version} promue @champion."
+        )
+    else:
+        print(
+            f"\nQuality gate REFUSÉE : ROC-AUC {auc_nouveau} < champion {auc_champion}. "
+            "Le champion actuel est conservé."
+        )
 
 if __name__ == "__main__":
     main()

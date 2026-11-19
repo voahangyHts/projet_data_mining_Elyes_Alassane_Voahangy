@@ -1,5 +1,5 @@
 # Commandes du projet Panier Vert (à lancer depuis la racine du dépôt)
-.PHONY: install prepare test rappelconso rnm off lake modele api api-docker enrichir
+.PHONY: install prepare test rappelconso rnm off lake modele api api-docker train drift enrichir
 
 # Installe l'environnement Python à l'identique (Python 3.12, Polars, Pandera...)
 install: ; uv sync
@@ -30,6 +30,12 @@ lake: ; uv run python -m src.upload_lake
 modele: ; uv run python -m src.export_modele
 api: ; uv run bentoml serve api.service:Reachat
 api-docker: ; uv run bentoml build && uv run bentoml containerize reachat:latest
+
+# Entraînement tracé dans MLflow (lancer d'abord : docker compose --profile mlops up -d)
+train: ; uv run python -m src.classification
+
+# Rapport de dérive Evidently (environnement séparé : Evidently 0.7 exige pandas 2)
+drift: ; uv run --no-project --with "evidently==0.7.23" --with "pandas<3" --with polars --with pyarrow python -m src.drift
 
 # Table « or » : rappels RappelConso + fiches Open Food Facts (jointure par code-barres)
 enrichir: ; uv run python -m src.rappels_enrichis
