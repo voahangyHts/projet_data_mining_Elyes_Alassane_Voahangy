@@ -18,6 +18,14 @@ Création d'une chaîne de valeur data de bout en bout pour l'enseigne **Panier 
 - Données nettoyées et validées par schéma (Pandera) dans `data/processed/`
 - Algorithmes entraînés : Segmentation (K-means), Recommandation (FP-Growth), Prédiction de réachat (XGBoost).
 
+## 📦 Livrables J3 (Industrialisation MLOps) – tag `j3-mlops`
+- **API de réachat** BentoML, conteneurisée avec Docker (voir [API](#-api-de-réachat-bentoml--docker))
+- **Suivi des modèles** MLflow : 4 modèles dans 3 expériences, registre avec alias `@champion` et quality gate
+- **Versionnage des données** DVC et pipeline reproductible (`dvc repro`)
+- **Intégration continue** GitHub Actions : tests automatiques + quality gate à chaque pull request
+- **Surveillance de la dérive** Evidently (`reports/drift_report.html`)
+- **Architecture médaillon** (bronze / silver / gold) et table gold `rappels_enrichis`
+
 ## 📊 Sources de données
 
 | Source | Contenu | Accès | Commande | Volume obtenu | Licence |
@@ -63,7 +71,11 @@ Les dossiers `raw/` et `processed/` gardent leurs noms, car le pipeline DVC s'ap
 - `data/raw/` : Données brutes au format Parquet et CSV (ne jamais modifier manuellement)
 - `data/processed/` : Données nettoyées pour l'analyse
 - `notebooks/` : Notebooks d'analyse (EDA, modélisation)
-- `src/` : Scripts Python (collecte, api, scraping)
+- `src/` : Scripts Python (collecte, nettoyage, modèles, MLflow, dérive)
+- `api/` : API de réachat (BentoML) ; `bentofile.yaml` pour l'image Docker
+- `tests/` : tests automatiques (pytest)
+- `reports/` : résultats des modèles (graphiques, tableaux, `champion.json`, rapport de dérive)
+- `dvc.yaml` / `dvc.lock` : pipeline DVC ; `.github/workflows/ci.yml` : intégration continue
 
 ## 🧹 Préparation des données (J2 – ticket PAN-5)
 
@@ -91,7 +103,7 @@ make rappelconso   # RappelConso : collecte incrémentale + transformation
 make rnm           # RNM : scraping des prix + transformation
 make off           # Open Food Facts : collecte incrémentale (longue) + transformation
 make prepare       # Instacart : nettoyage + contrat de données
-make test          # tests automatiques (14 tests)
+make test          # tests automatiques (26 tests)
 ```
 
 > `make off` interroge l'API produit par produit (environ 15 codes par minute) : la collecte complète prend plusieurs heures. Elle est **incrémentale** : on peut l'arrêter (Ctrl + C) et la relancer, elle reprend où elle s'était arrêtée.
@@ -110,7 +122,7 @@ docker compose down     # arrête le data lake (les données sont conservées)
 
 - **Console web :** http://localhost:9001 (identifiants du fichier `.env`)
 - **Incrémental :** un fichier déjà présent avec la même taille n'est pas renvoyé.
-- **Services optionnels :** `docker compose --profile restitution up -d` (PostgreSQL + Adminer) et `docker compose --profile mlops up -d` (MLflow, prévu pour le J3).
+- **Services optionnels :** `docker compose --profile restitution up -d` (PostgreSQL + Adminer) et `docker compose --profile mlops up -d` (MLflow, voir plus bas).
 - **Sécurité :** `.env` contient les mots de passe et n'est jamais envoyé sur GitHub (il est dans `.gitignore`) ; seul le modèle `.env.example` est versionné.
 
 ## 🗂️ Versionnage des données (DVC)
@@ -186,8 +198,8 @@ docker run --rm -p 3000:3000 reachat:latest
 
 | Route | Entrée | Sortie |
 |---|---|---|
-| `POST /predict` | `{"user_id": 184235, "product_id": 44683}` | `{"proba_reachat": 0.135, "recommander": false, "seuil": 0.23}` |
-| `POST /recommandations` | `{"user_id": 184235, "n": 5}` | les 5 produits les plus probables, avec leur nom et leur probabilité |
+| `POST /predict` | `{"user_id": 23, "product_id": 2138}` | `{"proba_reachat": 0.007, "recommander": false, "seuil": 0.22}` |
+| `POST /recommandations` | `{"user_id": 23, "n": 5}` | les 5 produits les plus probables, avec leur nom et leur probabilité (ex. « Original French Vanilla Yogurt », 0.225) |
 
 - **Seuil** : 0,22, choisi sur la validation (F1 maximal) et lu dans le run du champion MLflow.
 - **Couple inconnu** : erreur 404 explicite, aucune prédiction inventée.
@@ -205,7 +217,7 @@ make train                             # entraîne baseline + XGBoost et les tra
 
 - **4 modèles tracés, dans 3 expériences :**
   - `prediction_reachat` : baseline (régression logistique) et XGBoost (paramètres, métriques, SHAP, équité par segment, modèle) — `make train` ;
-  - `segmentation_clients` : K-means, un run par k testé (inertie, silhouette) + k retenu, graphiques et modèle ; segments nommés automatiquement d'après leur profil — `uv run python -m src.clustering` ;
+  - `segmentation_clients` : K-means, un run par k testé (inertie, silhouette) + k retenu, graphiques et modèle ; segments numérotés par nombre de commandes croissant (0 = Gros paniers bio et frais du week-end, 1 = Occasionnels petits paniers, 2 = Fidèles réguliers) et nommés automatiquement d'après leur profil — `uv run python -m src.clustering` ;
   - `regles_association` : FP-Growth au niveau rayons et produits (seuils, nombre de règles, lift maximal, top 5) — `uv run python -m src.rules`.
 - **Validation croisée :** 5 plis groupés par client (`GroupKFold`) → ROC-AUC moyen **0,832**, proche du test (**0,834**) : modèle stable.
 - **Reproductible :** table triée (`user_id`, `product_id`) et graine fixe → mêmes métriques à chaque lancement.
