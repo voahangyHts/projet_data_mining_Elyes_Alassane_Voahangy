@@ -234,6 +234,10 @@ def main():
         mlflow.log_artifact(str(shap_file), artifact_path="figures")
         print("\nModèle XGBoost tracé dans MLflow et exporté en .joblib avec succès.")
 
+
+    # Tableau des scores lu par le quality gate de la CI (src/quality_gate.py, Alassane)
+    pl.DataFrame([res_baseline, res_xgb]).write_csv(SORTIE / "classification_resultats.csv")
+
     # --- QUALITY GATE : promotion seulement si le nouveau modèle est au moins aussi bon ---
     client = MlflowClient()
     auc_champion = auc_du_champion(client)
