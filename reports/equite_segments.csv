@@ -1,0 +1,4 @@
+segment,nom_segment,nb_couples,taux_reachat_reel,rappel,precision
+0,Gros paniers bio et frais du week-end,91107,0.133,0.515,0.386
+1,Occasionnels petits paniers,84931,0.105,0.439,0.391
+2,Fidèles réguliers,211009,0.085,0.523,0.414

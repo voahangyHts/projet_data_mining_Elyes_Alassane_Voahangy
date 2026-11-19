@@ -205,17 +205,21 @@ stages:
       size: 626908
     - path: src/classification.py
       hash: md5
-      md5: dd5909216807d53a7ce397f9974a0559
-      size: 11655
+      md5: 43c4b5fe83ed09f86a5b1318e19f4da5
+      size: 12277
     outs:
     - path: reports/classification_resultats.csv
       hash: md5
       md5: a8207ef166e01f2ea1c63949b52ad067
       size: 133
+    - path: reports/equite_segments.csv
+      hash: md5
+      md5: 0c506af27427e53f9c8f167650298b12
+      size: 231
     - path: reports/shap_reachat.png
       hash: md5
-      md5: 6cc53a78dd7c0c1efc01927338b195ae
-      size: 115861
+      md5: 06f8efdb1749679aeb0d496ba64470a6
+      size: 115279
   quality_gate:
     cmd: uv run python -m src.quality_gate
     deps:

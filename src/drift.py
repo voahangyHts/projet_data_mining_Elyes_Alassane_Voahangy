@@ -51,6 +51,31 @@ def commandes(eval_set, fichier_lignes):
     return table.with_columns(pl.col("order_dow").cast(pl.String)).to_pandas()
 
 
+def resumer(resultat: dict, reference, courant) -> pl.DataFrame:
+    """Une ligne par variable : test, score, seuil, dérive détectée, moyennes.
+
+    `resultat` est le dictionnaire du rapport Evidently (Report.run(...).dict()) :
+    chaque métrique ValueDrift donne sa colonne, sa méthode, son seuil et son score.
+    """
+    lignes = []
+    for m in resultat["metrics"]:
+        config = m["config"]
+        if not config["type"].endswith("ValueDrift"):
+            continue
+        colonne = config["column"]
+        numerique = colonne in NUMERIQUES
+        lignes.append({
+            "variable": colonne,
+            "methode": config["method"],
+            "score": round(float(m["value"]), 3),
+            "seuil": config["threshold"],
+            "derive": float(m["value"]) >= config["threshold"],
+            "moyenne_reference": round(float(reference[colonne].mean()), 2) if numerique else None,
+            "moyenne_courant": round(float(courant[colonne].mean()), 2) if numerique else None,
+        })
+    return pl.DataFrame(lignes).sort("score", descending=True)
+
+
 def main():
     SORTIE.mkdir(exist_ok=True)
     reference = commandes("prior", "order_products__prior.parquet")
@@ -70,6 +95,11 @@ def main():
     fichier = SORTIE / "drift_report.html"
     resultat.save_html(str(fichier))
     print(f"Rapport de dérive enregistré dans {fichier}")
+
+    # Résumé chiffré (lu par la page « Équipe data » du tableau de bord)
+    resume_csv = resumer(resultat.dict(), reference, courant)
+    resume_csv.write_csv(SORTIE / "drift_resume.csv")
+    print(f"Résumé de la dérive enregistré dans {SORTIE / 'drift_resume.csv'}")
 
     # Résumé dans le terminal : moyennes des deux jeux, côte à côte
     resume = (
