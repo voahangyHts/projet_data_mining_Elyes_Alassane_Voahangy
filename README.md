@@ -217,12 +217,26 @@ make api         # 1er terminal : lance l'API (http://localhost:3000)
 make dashboard   # 2e terminal : lance le dashboard (http://localhost:8501)
 ```
 
-| Page | Public | Contenu |
+**Connexion obligatoire.** `dashboard/app.py` affiche d'abord un écran de connexion ; aucune page n'est chargée sans identifiant et mot de passe valides. Chaque rôle ne voit que les pages qui lui servent :
+
+| Page (`dashboard/vues/`) | Rôles | Contenu |
 |---|---|---|
-| Direction (`dashboard/app.py`) | direction | chiffres clés, répartition des 3 profils de clients, action recommandée par profil |
-| Marketing CRM (`dashboard/pages/1_Marketing_CRM.py`) | marketing / CRM | pour un client : son profil, les produits à lui proposer (appel à `/recommandations`), la raison du score, export CSV |
+| Direction (`direction.py`) | Direction, Équipe Data | chiffres clés, répartition des 3 profils de clients, action recommandée par profil |
+| Marketing CRM (`marketing_crm.py`) | Métier, Équipe Data | pour un client : son profil, les produits à lui proposer (appel à `/recommandations`), la raison du score, export CSV |
+| Qualité catalogue (`qualite_catalogue.py`) | Métier, Équipe Data | rappels produits enrichis par Open Food Facts |
+| Équipe data (`equipe_data.py`) | Équipe Data | modèle champion, métriques, dérive, équité |
+
+**Créer les comptes (une fois par PC) :** les mots de passe ne sont jamais stockés, seulement leur empreinte (PBKDF2-SHA256 salé, 600 000 itérations), dans le fichier `.env`, qui n'est jamais envoyé sur GitHub.
+
+```bash
+uv run python -m dashboard.auth direction direction   # demande le mot de passe (12 caractères min.)
+# copier la ligne affichée dans .env, par ex. : DASHBOARD_COMPTE_DIRECTION='direction|pbkdf2_sha256$...'
+```
+
+Rôles possibles : `direction`, `metier`, `data`. Les variables sont documentées dans `.env.example`, sans aucun secret.
 
 - **Accessibilité :** information jamais codée par la couleur seule (« Oui / Non » écrit), barres horizontales triées, résumé texte et source sous chaque visuel, libellés sans jargon.
+- **Sécurité :** mots de passe hachés et salés, comparaison à temps constant, pause d'une seconde après un échec ; 5 tests (`tests/test_auth.py`).
 - **Transparence :** chaque recommandation affiche sa raison (nombre d'achats du produit, commandes depuis le dernier achat : variables les plus influentes selon SHAP) ; le score aide à décider, l'action reste humaine.
 - **Adresse de l'API :** variable `API_REACHAT` (par défaut `http://localhost:3000`).
 
