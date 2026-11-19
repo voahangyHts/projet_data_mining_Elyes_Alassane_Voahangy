@@ -136,3 +136,24 @@ make train                             # entraîne baseline + XGBoost et les tra
 - **Quality gate :** une nouvelle version ne devient champion que si son ROC-AUC est au moins égal à celui du champion actuel ; testée par `tests/test_quality_gate.py`.
 - **Adresse du serveur :** variable `MLFLOW_TRACKING_URI` (par défaut `http://localhost:5000`).
 - **Limite :** chaque membre a son propre serveur MLflow (local) ; un serveur partagé serait une amélioration possible.
+
+
+## 📈 Surveillance de la dérive (Evidently)
+
+Le rapport compare l'historique des commandes (`prior`, référence) aux dernières commandes de chaque client (`train`, courant), sur 50 000 commandes tirées au hasard dans chaque jeu.
+
+```bash
+make drift   # génère reports/drift_report.html
+```
+
+| Variable | Test | Score | Dérive |
+|---|---|---|---|
+| Délai depuis la commande précédente | Wasserstein | **0,711** | ⚠️ détectée (10,7 → 17,0 jours) |
+| Part de produits rachetés | Wasserstein | 0,096 | non |
+| Taille du panier | Wasserstein | 0,061 | non |
+| Jour de la semaine | Jensen-Shannon | 0,042 | non |
+| Heure de commande | Wasserstein | 0,027 | non |
+
+- **Lecture :** les habitudes (heure, jour, panier, réachat) sont stables ; seule la cadence change. C'est probablement un effet de la construction du jeu Instacart (la commande `train` est la dernière de chaque client) : à interpréter avec prudence.
+- **À surveiller :** le délai influence le réachat (hypothèse H1, SHAP). Une dérive qui toucherait aussi la part de rachats justifierait de réentraîner le modèle.
+- **Technique :** Evidently 0.7 n'est pas compatible avec pandas 3 (utilisé par le projet). `make drift` lance donc le script dans un environnement séparé avec pandas 2, sans modifier celui du projet.
