@@ -1,0 +1,26 @@
+# Paquet (bento) de l'API de réachat Panier Vert
+# Construire : uv run bentoml build
+# Image Docker : uv run bentoml containerize reachat:latest
+service: "api.service:Reachat"
+name: reachat
+labels:
+  projet: panier-vert
+  modele: xgboost-reachat
+description: "API de réachat Panier Vert : /predict et /recommandations"
+
+include:
+  - "api/*.py"
+  - "data/processed/features_reachat.parquet"
+  - "data/processed/products.parquet"
+
+python:
+  packages:
+    - numpy==2.5.5
+    - pandas==3.1.1
+    - polars==2.1.0
+    - pyarrow==26.0.1
+    - scikit-learn==1.9.1
+    - xgboost==3.4.1
+
+docker:
+  python_version: "3.12"

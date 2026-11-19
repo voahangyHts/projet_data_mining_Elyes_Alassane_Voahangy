@@ -225,3 +225,9 @@ __marimo__/
 !/data/**/
 !/data/**/*.dvc
 !/data/**/.gitignore
+
+# MLflow et modèles générés localement
+mlflow.db
+mlruns/
+mlartifacts/
+models/
