@@ -104,7 +104,7 @@ docker compose down     # arrête le data lake (les données sont conservées)
 L'API sert le modèle XGBoost du J2 : pour un client et un produit qu'il a déjà acheté, elle donne la probabilité qu'il le rachète à sa prochaine commande.
 
 ```bash
-make modele       # entraîne XGBoost, l'enregistre dans BentoML (seuil 0,23) + table des caractéristiques
+make modele       # récupère le champion MLflow (@champion), l'enregistre dans BentoML + table des caractéristiques
 make api          # lance l'API en local -> http://localhost:3000 (documentation interactive)
 make api-docker   # construit l'image Docker de l'API
 docker run --rm -p 3000:3000 reachat:latest
@@ -115,7 +115,7 @@ docker run --rm -p 3000:3000 reachat:latest
 | `POST /predict` | `{"user_id": 184235, "product_id": 44683}` | `{"proba_reachat": 0.135, "recommander": false, "seuil": 0.23}` |
 | `POST /recommandations` | `{"user_id": 184235, "n": 5}` | les 5 produits les plus probables, avec leur nom et leur probabilité |
 
-- **Seuil** : 0,23, choisi sur la validation (F1 maximal) et enregistré avec le modèle.
+- **Seuil** : 0,22, choisi sur la validation (F1 maximal) et lu dans le run du champion MLflow.
 - **Couple inconnu** : erreur 404 explicite, aucune prédiction inventée.
 - **Limite** : l'API ne connaît que les 30 000 clients de l'échantillon d'entraînement.
 - **Testé** : temps de réponse de 25 à 190 ms ; résultats identiques en local et dans le conteneur Docker.
