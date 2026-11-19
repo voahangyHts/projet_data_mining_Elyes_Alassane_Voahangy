@@ -209,6 +209,20 @@ def main():
             if segment is not None:  # clients sans segment : ignorés
                 mlflow.log_metric(f"equite_rappel_seg_{segment}", rappel)
 
+        # Tableau d'équité complet, lu par la page « Équipe data » du tableau de bord
+        (
+            test.filter(pl.col("segment").is_not_null())
+            .group_by("segment", "nom_segment")
+            .agg(
+                nb_couples=pl.len(),
+                taux_reachat_reel=pl.col("achete").mean().round(3),
+                rappel=(vrais_positifs.sum() / (pl.col("achete") == 1).sum()).round(3),
+                precision=(vrais_positifs.sum() / pl.col("pred").sum()).round(3),
+            )
+            .sort("segment")
+            .write_csv(SORTIE / "equite_segments.csv")
+        )
+
         # Création et sauvegarde SHAP
         echantillon = X.iloc[idx_test].sample(2_000, random_state=GRAINE)
         valeurs = shap.TreeExplainer(xgb)(echantillon)

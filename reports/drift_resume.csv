@@ -1,0 +1,6 @@
+variable,methode,score,seuil,derive,moyenne_reference,moyenne_courant
+days_since_prior_order,Wasserstein distance (normed),0.711,0.1,true,10.67,17.02
+part_rachetes,Wasserstein distance (normed),0.096,0.1,false,0.6,0.6
+taille_panier,Wasserstein distance (normed),0.061,0.1,false,10.13,10.58
+order_dow,Jensen-Shannon distance,0.042,0.1,false,,
+order_hour_of_day,Wasserstein distance (normed),0.027,0.1,false,13.49,13.55

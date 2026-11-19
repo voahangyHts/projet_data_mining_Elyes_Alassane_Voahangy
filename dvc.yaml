@@ -104,6 +104,8 @@ stages:
           cache: false
       - reports/shap_reachat.png:
           cache: false
+      - reports/equite_segments.csv:
+          cache: false
 
   # --- Quality gate : dvc repro échoue si le modèle est moins bon ----------
   quality_gate:
