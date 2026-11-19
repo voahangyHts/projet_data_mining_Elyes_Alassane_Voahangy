@@ -34,6 +34,21 @@ Chaque source suit le même circuit : **collecte** → `data/raw/<source>/` (bru
 - **RappelConso ↔ Open Food Facts** : par le code-barres (GTIN).
 - **RNM ↔ Instacart** : par un mot-clé anglais (ex. TOMATE → `tomato`), car Instacart n'a ni prix ni code-barres.
 
+
+### Architecture médaillon
+
+Les données sont organisées en trois couches, de la plus brute à la plus utile au métier :
+
+| Couche | Dossier | Contenu |
+|---|---|---|
+| 🥉 **Bronze** (brut) | `data/raw/` | Données telles que collectées : Instacart, RappelConso, RNM, Open Food Facts (jamais modifiées à la main) |
+| 🥈 **Silver** (nettoyé) | `data/processed/` | Tables Parquet typées, nettoyées, dédoublonnées et validées par les contrats Pandera |
+| 🥇 **Gold** (prêt à l'usage) | `data/processed/` | Tables métier : `features_reachat.parquet` (API de réachat), `segments_clients.parquet` (segment + `nom_segment`), `rappels_enrichis.parquet` (rappels + Open Food Facts) |
+
+Les dossiers `raw/` et `processed/` gardent leurs noms, car le pipeline DVC s'appuie sur ces chemins : la couche Gold se distingue par le nom de ses tables, pas par un dossier séparé.
+
+
+
 ### Limites connues
 
 - **Instacart** : pas de prix, pas de dates réelles, noms de produits en anglais ; le délai entre commandes est plafonné à 30 jours.
