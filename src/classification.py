@@ -130,6 +130,9 @@ def auc_du_champion(client):
         return None
     return client.get_run(version.run_id).data.metrics.get("roc_auc")
 
+def peut_promouvoir(auc_nouveau, auc_champion):
+    """Quality gate : promouvoir seulement si le nouveau modèle est au moins aussi bon."""
+    return auc_champion is None or auc_nouveau >= auc_champion
 
 def main():
     mlflow.set_tracking_uri(MLFLOW_URI)
@@ -235,7 +238,7 @@ def main():
     client = MlflowClient()
     auc_champion = auc_du_champion(client)
     auc_nouveau = res_xgb["roc_auc"]
-    if auc_champion is None or auc_nouveau >= auc_champion:
+    if peut_promouvoir(auc_nouveau, auc_champion):
         client.set_registered_model_alias(
             NOM_MODELE, "champion", info.registered_model_version
         )
