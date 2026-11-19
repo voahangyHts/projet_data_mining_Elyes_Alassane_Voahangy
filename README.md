@@ -113,6 +113,65 @@ docker compose down     # arrête le data lake (les données sont conservées)
 - **Services optionnels :** `docker compose --profile restitution up -d` (PostgreSQL + Adminer) et `docker compose --profile mlops up -d` (MLflow, prévu pour le J3).
 - **Sécurité :** `.env` contient les mots de passe et n'est jamais envoyé sur GitHub (il est dans `.gitignore`) ; seul le modèle `.env.example` est versionné.
 
+## 🗂️ Versionnage des données (DVC)
+
+Git versionne le code, **DVC versionne les données**. Les fichiers lourds restent hors de Git : Git ne garde que de petits fichiers d'empreintes (`data/raw.dvc`, `dvc.lock`), et le contenu est stocké dans un **dossier OneDrive partagé** entre les membres de l'équipe (remote DVC `partage`, celui par défaut). Chaque commit Git correspond ainsi à une version exacte des données et des résultats.
+
+- **Données brutes** (`data/raw/`) : versionnées par `data/raw.dvc`. Elles ne se recalculent pas (copie Kaggle, collectes API), donc on les fige après chaque collecte.
+- **Pipeline** (`dvc.yaml`) : `prepare` et `transform_*` (brut → propre), puis `clustering`, `rules` et `classification`. `dvc repro` ne relance que les étapes dont le code ou les entrées ont changé, et `dvc.lock` enregistre les empreintes de chaque entrée et sortie.
+- **Résultats** (`reports/`) : produits par le pipeline mais laissés dans Git, pour rester lisibles sur GitHub.
+
+**Première installation (une fois par PC) :**
+
+1. Installer DVC (à part du projet, à cause d'un conflit de versions avec boto3) :
+   ```bash
+   uv tool install "dvc[s3]"
+   ```
+2. Avoir le dossier partagé **`Panier-Vert-DVC`** synchronisé sur son PC : sur onedrive.live.com, ouvrir **Partagés**, faire un clic droit sur `Panier-Vert-DVC`, puis **Ajouter un raccourci à Mes fichiers**. Il apparaît dans l'explorateur, sous `OneDrive`.
+3. Donner à DVC le chemin de ce dossier **sur son PC** (le chemin diffère d'un PC à l'autre, d'où `--local`) :
+   ```bash
+   dvc remote add --local partage "C:\Users\<moi>\OneDrive\Panier-Vert-DVC"
+   ```
+4. Conseillé, si le projet est lui-même dans OneDrive : mettre le cache DVC hors de OneDrive, pour ne pas synchroniser les données en double :
+   ```bash
+   dvc cache dir --local "C:\Users\<moi>\.dvc-cache\panier-vert"
+   ```
+
+Ces réglages vont dans `.dvc/config.local`, qui n'est jamais envoyé sur GitHub.
+
+**Au quotidien :**
+```bash
+make data-version   # après une collecte : nouvelle version de data/raw (dvc add)
+make repro          # rejoue les étapes du pipeline qui ont changé
+make push           # envoie les données versionnées dans le dossier partagé
+git add data/raw.dvc dvc.lock reports && git commit -m "..." && git push
+```
+
+**Récupérer les données d'un coéquipier :**
+```bash
+git pull            # récupère data/raw.dvc et dvc.lock
+make pull           # récupère les données correspondantes (dvc pull)
+```
+
+> Attendre que OneDrive ait fini de synchroniser (icône ✓) avant `make pull` chez l'autre, et ne jamais modifier à la main le contenu de `Panier-Vert-DVC`.
+>
+> Pour revenir à une ancienne version des données : `git checkout <commit>` puis `dvc checkout`.
+>
+> Le remote `lake` (data lake RustFS local) reste disponible comme sauvegarde personnelle : `dvc push -r lake`.
+
+## ✅ Intégration continue et quality gate (GitHub Actions)
+
+À chaque push et pull request, GitHub lance seul le workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) :
+
+1. **Tests automatiques** : contrats de données, nettoyage et quality gate (`make test`).
+2. **Quality gate** : le meilleur modèle de `reports/classification_resultats.csv` est comparé au **champion** enregistré dans `reports/champion.json`, sur la **PR-AUC** (métrique adaptée aux classes déséquilibrées : environ 10 % de réachats). Un modèle moins bon que le champion, au-delà d'une tolérance de 0,005, est **refusé** : le commit passe en rouge et la pull request ne doit pas être fusionnée.
+
+```bash
+make gate       # vérifier en local avant de pousser
+make champion   # le nouveau modèle est meilleur : il devient le champion
+```
+
+Le quality gate est aussi la dernière étape du pipeline DVC : `dvc repro` échoue si le modèle régresse. GitHub n'entraîne pas les modèles (les données restent sur le data lake local) : il vérifie les résultats produits par `dvc repro` et versionnés dans `reports/`.
 
 ## 🔌 API de réachat (BentoML + Docker)
 
@@ -151,7 +210,7 @@ make train                             # entraîne baseline + XGBoost et les tra
 - **Validation croisée :** 5 plis groupés par client (`GroupKFold`) → ROC-AUC moyen **0,832**, proche du test (**0,834**) : modèle stable.
 - **Reproductible :** table triée (`user_id`, `product_id`) et graine fixe → mêmes métriques à chaque lancement.
 - **Registre :** modèle `reachat_xgb`, alias **`@champion`**.
-- **Quality gate :** une nouvelle version ne devient champion que si son ROC-AUC est au moins égal à celui du champion actuel ; testée par `tests/test_quality_gate.py`.
+- **Quality gate :** une nouvelle version ne devient champion que si son ROC-AUC est au moins égal à celui du champion actuel ; testée par `tests/test_quality_gate.py`. Elle complète le quality gate de la CI (PR-AUC, `reports/champion.json`, testé par `tests/test_quality_gate_ci.py`) : MLflow décide du champion servi par l'API, la CI bloque une régression dans une pull request.
 - **Adresse du serveur :** variable `MLFLOW_TRACKING_URI` (par défaut `http://localhost:5000`).
 - **Limite :** chaque membre a son propre serveur MLflow (local) ; un serveur partagé serait une amélioration possible.
 

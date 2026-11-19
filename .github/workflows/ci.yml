@@ -1,0 +1,53 @@
+# ============================================================================
+#  Intégration continue du projet Panier Vert
+# ============================================================================
+#  À chaque push et pull request, GitHub lance seul :
+#    1. tests         : les tests automatiques (contrats de données, nettoyage,
+#                       quality gate) -> make test
+#    2. quality-gate  : refuse un modèle moins bon que le champion
+#                       (reports/classification_resultats.csv vs
+#                        reports/champion.json, métrique PR-AUC)
+#  Si l'un des deux échoue, le commit est marqué en rouge et la pull request
+#  ne doit pas être fusionnée.
+#
+#  Les données (DVC) restent sur le data lake local : GitHub n'entraîne pas
+#  les modèles, il vérifie les résultats produits par « dvc repro » et
+#  versionnés dans reports/.
+# ============================================================================
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    name: Tests automatiques
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Installer l'environnement (Python 3.12, versions de uv.lock)
+        run: uv sync --locked
+
+      - name: Lancer les tests
+        run: uv run python -m pytest -v
+
+  quality-gate:
+    name: Quality gate (modèle vs champion)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v6
+
+      # Le script n'utilise que la bibliothèque standard : pas besoin
+      # d'installer les dépendances du projet
+      - name: Comparer le nouveau modèle au champion
+        run: uv run --no-project --python 3.12 python -m src.quality_gate

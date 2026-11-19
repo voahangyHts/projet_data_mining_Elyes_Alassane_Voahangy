@@ -1,4 +1,4 @@
 segment,nb_commandes,delai_moyen,panier_moyen,taux_reachat,part_bio,part_frais,part_jours_0_1,nb_clients,nom_segment
-0,8.28,17.56,8.22,0.39,0.1,0.27,0.29,71217,Occasionnels petits paniers
-1,6.97,18.54,11.05,0.41,0.39,0.56,0.43,67655,Gros paniers bio et frais du week-end
+0,6.97,18.54,11.05,0.41,0.39,0.56,0.43,67655,Gros paniers bio et frais du week-end
+1,8.28,17.56,8.22,0.39,0.1,0.27,0.29,71217,Occasionnels petits paniers
 2,31.98,9.37,10.69,0.67,0.33,0.49,0.35,67337,Fidèles réguliers

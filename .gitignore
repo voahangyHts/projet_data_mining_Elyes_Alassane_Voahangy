@@ -219,8 +219,14 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-data/
-# MLflow et Modèles générés localement
+# Données : jamais dans Git, versionnées par DVC (data/raw.dvc, dvc.lock).
+# Seuls les petits fichiers .dvc et .gitignore générés par DVC passent.
+/data/**
+!/data/**/
+!/data/**/*.dvc
+!/data/**/.gitignore
+
+# MLflow et modèles générés localement
 mlflow.db
 mlruns/
 mlartifacts/

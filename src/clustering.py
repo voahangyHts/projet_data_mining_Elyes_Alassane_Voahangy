@@ -68,8 +68,21 @@ def construire_variables() -> pl.DataFrame:
             part_frais=pl.col("frais").mean(),
         )
     )
-    # Tri : même ordre des clients à chaque lancement -> résultats reproductibles
-    return commandes_client.join(achats_client, on="user_id").collect().sort("user_id")
+    # tri par client : group_by de Polars rend les lignes dans un ordre aléatoire,
+    # ce qui changerait le résultat du K-means d'une exécution à l'autre
+    return commandes_client.join(achats_client, on="user_id").sort("user_id").collect()
+
+
+def numeroter_segments(labels: np.ndarray, nb_commandes: np.ndarray) -> np.ndarray:
+    """Renumérote les segments par nombre moyen de commandes croissant.
+
+    Le K-means numérote ses groupes au hasard : sans ce tri, le segment
+    « fidèles » pourrait s'appeler 0 un jour et 2 le lendemain.
+    """
+    ordre = np.argsort([nb_commandes[labels == s].mean() for s in np.unique(labels)])
+    nouveau = np.empty_like(ordre)
+    nouveau[ordre] = np.arange(len(ordre))
+    return nouveau[labels]
 
 
 def nommer_segments(profils: pl.DataFrame) -> dict[int, str]:
@@ -130,7 +143,8 @@ def main() -> None:
     # k retenu : meilleure silhouette entre 3 et 6 segments (utilisables par le métier), sauf choix imposé
     k = K_FORCE or max((r for r in resultats if 3 <= r[0] <= 6), key=lambda r: r[2])[0]
     km = KMeans(n_clusters=k, n_init=10, random_state=GRAINE).fit(X)
-    clients = clients.with_columns(segment=pl.Series(km.labels_))
+    segments = numeroter_segments(km.labels_, clients["nb_commandes"].to_numpy())
+    clients = clients.with_columns(segment=pl.Series(segments))
     print(f"\nk retenu : {k}")
 
     # 3. Profil moyen de chaque segment (pour le nommer)
@@ -156,7 +170,7 @@ def main() -> None:
     idx = np.random.default_rng(GRAINE).choice(len(X), size=5_000, replace=False)
     coords = PCA(n_components=2, random_state=GRAINE).fit_transform(X)[idx]
     fig, ax = plt.subplots(figsize=(6, 5))
-    nuage = ax.scatter(coords[:, 0], coords[:, 1], c=km.labels_[idx], cmap="tab10", s=6, alpha=0.6)
+    nuage = ax.scatter(coords[:, 0], coords[:, 1], c=segments[idx], cmap="tab10", s=6, alpha=0.6)
     ax.legend(*nuage.legend_elements(), title="segment"); ax.set(title="Segments clients (ACP 2D)", xlabel="CP1", ylabel="CP2")
     fig.tight_layout(); fig.savefig(SORTIE / "segments_acp.png", dpi=120); plt.close(fig)
     print(f"\nGraphiques et profils enregistrés dans {SORTIE}/")

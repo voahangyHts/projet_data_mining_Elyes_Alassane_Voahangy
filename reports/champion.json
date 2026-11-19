@@ -1,0 +1,7 @@
+{
+  "modele": "XGBoost",
+  "metrique": "pr_auc",
+  "score": 0.424,
+  "tolerance": 0.005,
+  "source": "reports/classification_resultats.csv (J2, jeu de test)"
+}
