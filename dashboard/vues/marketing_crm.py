@@ -88,7 +88,7 @@ tableau = (
 a_proposer = tableau.filter(pl.col("À proposer ?") == "✔ Oui").height
 st.subheader(f"{a_proposer} produit(s) à proposer au client {user_id}")
 st.dataframe(
-    tableau.to_pandas(), hide_index=True, use_container_width=True,
+    tableau.to_pandas(), hide_index=True, width="stretch",
     column_config={"Probabilité de rachat (%)": st.column_config.ProgressColumn(
         "Probabilité de rachat (%)", min_value=0, max_value=100, format="%.1f %%")},
 )
