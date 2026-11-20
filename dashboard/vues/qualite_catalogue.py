@@ -136,7 +136,7 @@ st.altair_chart(
         description="Barres horizontales, nombre de produits rappelés par catégorie : "
         + " ; ".join(f"{c} {n}" for c, n in zip(top["categorie"], top["nb_texte"])),
     ),
-    use_container_width=True,
+    width="stretch",
 )
 tete = par_categorie.row(0, named=True)
 st.markdown(
@@ -156,7 +156,7 @@ with st.expander("Voir les données du graphique"):
             ),
         },
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
     )
 
 # --- 2. Nutri-Score des produits rappelés ----------------------------------
@@ -205,7 +205,7 @@ else:
             description="Barres, part des produits rappelés par Nutri-Score : "
             + " ; ".join(f"{l} {e}" for l, e in zip(df["nutriscore"], df["etiquette"])),
         ),
-        use_container_width=True,
+        width="stretch",
     )
     sans_note = choix.height - notes.height
     st.markdown(
@@ -225,5 +225,5 @@ else:
                 "part": st.column_config.NumberColumn("Part", format="percent"),
             },
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )

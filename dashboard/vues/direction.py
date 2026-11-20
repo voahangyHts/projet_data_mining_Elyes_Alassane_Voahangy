@@ -60,12 +60,15 @@ graphique = px.bar(
     profils.to_pandas(), x="nb_clients", y="nom_segment", orientation="h",
     text=[f"{n:,} clients ({p:.1%})".replace(",", " ").replace(".", ",") for n, p in zip(profils["nb_clients"], profils["part"])],
     labels={"nb_clients": "Nombre de clients", "nom_segment": ""},
-    color_discrete_sequence=["#1B5E20"],   # une seule couleur : l'information est dans le texte
+    # une seule couleur : l'information est dans le texte. #2E7D32 : contraste
+    # 5,1:1 sur fond clair et 3,7:1 sur fond sombre (#1B5E20 tombait à 2,4:1
+    # en thème sombre) ; texte blanc dessus : 5,1:1 (voir dashboard/ACCESSIBILITE.md)
+    color_discrete_sequence=["#2E7D32"],
 )
 graphique.update_traces(textposition="inside", textfont_color="white",
                         hovertemplate="%{y} : %{x:,} clients<extra></extra>")
 graphique.update_layout(height=280, margin=dict(l=10, r=10, t=10, b=10))
-st.plotly_chart(graphique, use_container_width=True)
+st.plotly_chart(graphique, width="stretch")
 st.caption("Résumé : trois profils de taille proche, de 32,7 % à 34,5 % des clients chacun. "
            "Source : segmentation K-means (k = 3) sur 206 209 clients Instacart.")
 
@@ -83,5 +86,5 @@ tableau = (
     )
     .with_columns(pl.col("Profil").replace_strict(ACTIONS, default="").alias("Action recommandée"))
 )
-st.dataframe(tableau.to_pandas(), hide_index=True, use_container_width=True)
+st.dataframe(tableau.to_pandas(), hide_index=True, width="stretch")
 st.caption("Source : reports/segments_profils.csv (pipeline DVC) · actions issues du rapport EDA du J2.")

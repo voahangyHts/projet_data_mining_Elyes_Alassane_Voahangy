@@ -158,7 +158,7 @@ else:
             description="Barres, scores de la baseline et de XGBoost : " + " ; ".join(
                 f"{m} {mo} {s}" for m, mo, s in zip(long["metrique"], long["modele"], long["score_texte"])),
         ),
-        use_container_width=True,
+        width="stretch",
     )
     xgb = resultats.filter(pl.col("modele") == "XGBoost").row(0, named=True)
     base_r = resultats.filter(pl.col("modele") != "XGBoost").row(0, named=True)
@@ -170,7 +170,7 @@ else:
     )
     st.caption("Source : `reports/classification_resultats.csv` (`dvc repro`, étape classification).")
     with st.expander("Voir les données du graphique"):
-        st.dataframe(resultats, hide_index=True, use_container_width=True)
+        st.dataframe(resultats, hide_index=True, width="stretch")
 
 # --- 3. Dérive des données (Evidently) -------------------------------------
 st.header("Dérive des données (Evidently)")
@@ -211,7 +211,7 @@ else:
             description="Barres, score de dérive par variable : " + " ; ".join(
                 f"{v} {e}" for v, e in zip(df["variable_lisible"], df["etiquette"])),
         ),
-        use_container_width=True,
+        width="stretch",
     )
     for ligne in derive.filter(pl.col("derive")).iter_rows(named=True):
         evolution = ""
@@ -239,7 +239,7 @@ else:
                 "seuil": "Seuil", "statut": "Statut",
                 "moyenne_reference": "Moyenne (référence)", "moyenne_courant": "Moyenne (courant)",
             },
-            hide_index=True, use_container_width=True,
+            hide_index=True, width="stretch",
         )
 
 # --- 4. Équité par segment --------------------------------------------------
@@ -276,7 +276,7 @@ else:
             description="Barres, rappel et précision par segment : " + " ; ".join(
                 f"{s} {i} {v}" for s, i, v in zip(long_e["segment_lisible"], long_e["indicateur"], long_e["valeur_texte"])),
         ),
-        use_container_width=True,
+        width="stretch",
     )
     ecart = equite["rappel"].max() - equite["rappel"].min()
     meilleur = equite.sort("rappel", descending=True).row(0, named=True)
@@ -300,5 +300,5 @@ else:
                 "rappel": st.column_config.NumberColumn("Rappel", format="percent"),
                 "precision": st.column_config.NumberColumn("Précision", format="percent"),
             },
-            hide_index=True, use_container_width=True,
+            hide_index=True, width="stretch",
         )
