@@ -1,4 +1,3 @@
-@'
 # Récit décisionnel SCQA — Projet Panier Vert
 
 ## 1. Structure SCQA (Pitch de la 1re minute)
@@ -28,4 +27,3 @@
 | **Utilisateurs métier (Marketing / CRM & Qualité)** | Qui cibler avec quel produit, et quels articles retirer/surveiller ? | Top 5 des produits recommandés par client (seuil 0,22), ventes croisées à fort lift (ex. mûres → framboises, lift 10,89) et alertes RappelConso (63 % en Nutri-Score D/E). | Lancer des offres ciblées, optimiser l'implantation en rayon et bloquer les références à risque. |
 | **Équipe Data** | Le modèle est-il fiable, équitable et stable dans le temps ? | Version `reachat_xgb@champion` (v4), comparaison vs baseline (0,824), explicabilité SHAP, équité par segment et détection de dérive Evidently (délai passé de 10,7 à 17,0 j). | Décider d'un réentraînement et maintenir la qualité en production. |
 | **Jury MSPR 5.1** | La démarche est-elle rigoureuse, légale et reproductible ? | Architecture médaillon, conformité RGPD/ODbL, pipeline DVC 8 étapes, CI verte (26 tests), API BentoML et restitution accessible WCAG/RGAA. | Valider l'acquisition des compétences B5C1, B5C6 et B5C8. |
-'@ | Set-Content -Path "docs/storytelling_scqa.md" -Encoding UTF8
